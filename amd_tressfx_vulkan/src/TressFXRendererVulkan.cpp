@@ -245,7 +245,6 @@ VkResult TressFXRenderer::CreateTextureAndViews(
             vkCreateImage(pvkDevice, &hairShadowMapInfo, nullptr, &m_pSMHairTexture));
 
         m_pSMHairMemory = allocImageMemory(pvkDevice, m_pSMHairTexture, memProperties);
-        AMD_V_RETURN(vkBindImageMemory(pvkDevice, m_pSMHairTexture, m_pSMHairMemory, 0));
 
         VkImageViewCreateInfo dsvDesc{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
         dsvDesc.format = VK_FORMAT_D32_SFLOAT;
@@ -274,7 +273,6 @@ VkResult TressFXRenderer::CreateTextureAndViews(
         AMD_V_RETURN(
             vkCreateImage(pvkDevice, &noiseTextureInfo, nullptr, &m_pNoiseTexture));
         m_pNoiseMemory = allocImageMemory(pvkDevice, m_pNoiseTexture, memProperties);
-        AMD_V_RETURN(vkBindImageMemory(pvkDevice, m_pNoiseTexture, m_pNoiseMemory, 0));
 
         XMFLOAT4 *noiseArray = new XMFLOAT4[512 * 512];
         for (UINT i = 0; i < 512 * 512; i++)
@@ -370,7 +368,6 @@ VkResult TressFXRenderer::CreateVertexBuffers(
     bd.size = sizeof(StandardVertex) * 6;
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pScreenQuadVB));
     m_pScreenQuadMemory = allocBufferMemory(pvkDevice, m_pScreenQuadVB, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-    AMD_V_RETURN(vkBindBufferMemory(pvkDevice, m_pScreenQuadVB, m_pScreenQuadMemory, 0));
 
     void *memoryPointer;
     vkMapMemory(pvkDevice, scratchMemory, offsetInScratchBuffer,
