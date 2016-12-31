@@ -244,13 +244,7 @@ VkResult TressFXRenderer::CreateTextureAndViews(
         AMD_V_RETURN(
             vkCreateImage(pvkDevice, &hairShadowMapInfo, nullptr, &m_pSMHairTexture));
 
-        VkMemoryRequirements mem_requirement;
-        vkGetImageMemoryRequirements(pvkDevice, m_pSMHairTexture, &mem_requirement);
-        VkMemoryAllocateInfo memoryAllocateInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-                                                nullptr, mem_requirement.size,
-                                                texture_memory_index};
-        AMD_V_RETURN(
-            vkAllocateMemory(pvkDevice, &memoryAllocateInfo, nullptr, &m_pSMHairMemory));
+        m_pSMHairMemory = allocImageMemory(pvkDevice, m_pSMHairTexture, memProperties);
         AMD_V_RETURN(vkBindImageMemory(pvkDevice, m_pSMHairTexture, m_pSMHairMemory, 0));
 
         VkImageViewCreateInfo dsvDesc{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
@@ -279,14 +273,7 @@ VkResult TressFXRenderer::CreateTextureAndViews(
             VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         AMD_V_RETURN(
             vkCreateImage(pvkDevice, &noiseTextureInfo, nullptr, &m_pNoiseTexture));
-
-        VkMemoryRequirements mem_requirement;
-        vkGetImageMemoryRequirements(pvkDevice, m_pNoiseTexture, &mem_requirement);
-        VkMemoryAllocateInfo memoryAllocateInfo = {VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO,
-                                                   nullptr, mem_requirement.size,
-                                                   texture_memory_index};
-        AMD_V_RETURN(
-            vkAllocateMemory(pvkDevice, &memoryAllocateInfo, nullptr, &m_pNoiseMemory));
+        m_pNoiseMemory = allocImageMemory(pvkDevice, m_pNoiseTexture, memProperties);
         AMD_V_RETURN(vkBindImageMemory(pvkDevice, m_pNoiseTexture, m_pNoiseMemory, 0));
 
         XMFLOAT4 *noiseArray = new XMFLOAT4[512 * 512];
@@ -382,13 +369,7 @@ VkResult TressFXRenderer::CreateVertexBuffers(
     bd.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
     bd.size = sizeof(StandardVertex) * 6;
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pScreenQuadVB));
-
-    VkMemoryRequirements memReq;
-    vkGetBufferMemoryRequirements(pvkDevice, m_pScreenQuadVB, &memReq);
-    VkMemoryAllocateInfo allocInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
-    allocInfo.allocationSize = memReq.size;
-    allocInfo.memoryTypeIndex = texture_memory_index;
-    AMD_V_RETURN(vkAllocateMemory(pvkDevice, &allocInfo, nullptr, &m_pScreenQuadMemory));
+    m_pScreenQuadMemory = allocBufferMemory(pvkDevice, m_pScreenQuadVB, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     AMD_V_RETURN(vkBindBufferMemory(pvkDevice, m_pScreenQuadVB, m_pScreenQuadMemory, 0));
 
     void *memoryPointer;
@@ -1004,7 +985,7 @@ VkResult TressFXRenderer::CreatePPLL(VkDevice pvkDevice, int winWidth, int winHe
         AMD_V_RETURN(
             vkCreateBuffer(pvkDevice, &BufferDesc, nullptr, &g_PPLBuffers.pPPLL_Buffer));
         g_PPLBuffers.pPPLL_Memory =
-            allocBufferMemory(pvkDevice, g_PPLBuffers.pPPLL_Buffer, texture_memory_index);
+            allocBufferMemory(pvkDevice, g_PPLBuffers.pPPLL_Buffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         // Atomic counter buffer
         BufferDesc.usage =
@@ -1013,7 +994,7 @@ VkResult TressFXRenderer::CreatePPLL(VkDevice pvkDevice, int winWidth, int winHe
         AMD_V_RETURN(vkCreateBuffer(pvkDevice, &BufferDesc, nullptr,
                                     &g_PPLBuffers.pAtomicCounterPLL_Buffer));
         g_PPLBuffers.pAtomicCounterPLL_Memory = allocBufferMemory(
-            pvkDevice, g_PPLBuffers.pAtomicCounterPLL_Buffer, texture_memory_index);
+            pvkDevice, g_PPLBuffers.pAtomicCounterPLL_Buffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         // update the width and height
         g_PPLBuffers.width = winWidth;
