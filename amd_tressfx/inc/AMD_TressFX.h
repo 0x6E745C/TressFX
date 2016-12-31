@@ -323,7 +323,7 @@ extern "C"
     AMD_TRESSFX_DLL_API TRESSFX_RETURN_CODE
         TressFX_Render(TressFX_Desc &desc, VkCommandBuffer commandBuffer, uint32_t uniformBufferIndex);
     AMD_TRESSFX_DLL_API TRESSFX_RETURN_CODE
-        TressFX_Resize(TressFX_Desc &desc, uint32_t texture_memory_index);
+        TressFX_Resize(TressFX_Desc &desc, VkPhysicalDeviceMemoryProperties memProperties);
 #endif
     AMD_TRESSFX_DLL_API TRESSFX_RETURN_CODE TressFX_Release(TressFX_Desc & desc);
 }

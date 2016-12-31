@@ -257,9 +257,9 @@ TRESSFX_RETURN_CODE AMD_TRESSFX_DLL_API TressFX_End(TressFX_Desc &desc)
 //
 //--------------------------------------------------------------------------------------
 TRESSFX_RETURN_CODE AMD_TRESSFX_DLL_API TressFX_Resize(TressFX_Desc &desc,
-                                                       uint32_t texture_memory_index)
+                                                       VkPhysicalDeviceMemoryProperties memProperties)
 {
-    bool success = desc.pOpaque->Resize(desc, texture_memory_index);
+    bool success = desc.pOpaque->Resize(desc, memProperties);
     return (success ? TRESSFX_RETURN_CODE_SUCCESS : TRESSFX_RETURN_CODE_FAIL);
 }
 

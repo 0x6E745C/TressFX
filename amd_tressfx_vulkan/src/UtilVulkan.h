@@ -49,8 +49,8 @@ void fillInitialData(VkCommandBuffer commandBuffer, VkBuffer scratchBuffer,
 VkResult getDescriptorLayout(VkDevice pvkDevice, const VkDescriptorSetLayoutBinding *ptr,
                              size_t count, VkDescriptorSetLayout &result);
 VkBufferMemoryBarrier getBufferBarrier(VkBuffer buffer, VkAccessFlags srcAccess,
-                                       VkAccessFlags dstAccess, size_t offset = 0,
-                                       size_t size = VK_WHOLE_SIZE);
+                                       VkAccessFlags dstAccess, size_t offset = 0u,
+                                       uint64_t size = VK_WHOLE_SIZE);
 
 VkPipelineShaderStageCreateInfo getShaderStageCreateInfo(VkShaderModule module,
                                                          VkShaderStageFlagBits stage,

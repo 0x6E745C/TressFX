@@ -92,7 +92,7 @@ class TressFXShortCut
     GPUOnlyStructuredBuffer m_FragmentColors;
 
     VkResult CreateScreenSizedItems(VkDevice pvkDevice, int winWidth, int winHeight,
-                                    uint32_t MemoryIndexGPU);
+                                    VkPhysicalDeviceMemoryProperties memProperties);
     void DestroyScreenSizedItems();
     VkResult CreateRenderStateObjects(VkDevice pvkDevice);
     VkResult CreateLayouts(VkDevice pvkDevice, VkDescriptorSetLayout SLMesh,
@@ -119,10 +119,10 @@ class TressFXShortCut
                             VkSampler shadowSamplerRef, VkImageView depthStencilView,
                             VkImageView colorView, VkBuffer configBuffer,
                             uint64_t configBufferSize, VkImageView noiseMap,
-                            VkImageView hairShadowMap, uint32_t deviceLocalMemoryIndex,
+                            VkImageView hairShadowMap, VkPhysicalDeviceMemoryProperties memProperties,
                             uint32_t width, uint32_t height);
     VkResult OnResizedSwapChain(VkDevice pvkDevice, int winWidth, int WinHeight,
-                                uint32_t deviceLocalMemoryIndex);
+                                VkPhysicalDeviceMemoryProperties memProperties);
 
     // Individual render pass setups.
     // Each basically sets up render state, UAVs, SRVs, and returns pixel

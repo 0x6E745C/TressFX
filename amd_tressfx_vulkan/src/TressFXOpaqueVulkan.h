@@ -59,7 +59,7 @@ struct TressFX_OpaqueDesc
                   uint32_t uniformBufferIndex);
     bool GenerateTransforms(TressFX_Desc &desc, TressFX_SceneMesh &sceneMesh);
     bool ApplyRigidTransforms(TressFX_Desc &desc);
-    bool Resize(TressFX_Desc &desc, uint32_t texture_memory_index);
+    bool Resize(TressFX_Desc &desc, VkPhysicalDeviceMemoryProperties memProperties);
 
     TressFXSimulation tressFXSimulation; // Hair simulation class
     TressFXRenderer tressFXRenderer;     // Hair rendering class

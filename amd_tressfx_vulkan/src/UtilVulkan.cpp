@@ -110,10 +110,10 @@ void fillInitialData(VkCommandBuffer commandBuffer, VkBuffer scratchBuffer,
                      size_t &offsetInScratchBuffer, VkDeviceSize size)
 {
     memcpy(reinterpret_cast<char *>(pScratchBuffer) + offsetInScratchBuffer,
-           pDataToUpload, size);
+           pDataToUpload, static_cast<size_t>(size));
     VkBufferCopy copyInfo{offsetInScratchBuffer, 0, static_cast<uint32_t>(size)};
     vkCmdCopyBuffer(commandBuffer, scratchBuffer, destBuffer, 1, &copyInfo);
-    offsetInScratchBuffer += size;
+    offsetInScratchBuffer += static_cast<size_t>(size);
 }
 
 VkResult getDescriptorLayout(VkDevice pvkDevice, const VkDescriptorSetLayoutBinding *ptr,
@@ -131,7 +131,7 @@ VkResult getDescriptorLayout(VkDevice pvkDevice, const VkDescriptorSetLayoutBind
 
 VkBufferMemoryBarrier getBufferBarrier(VkBuffer buffer, VkAccessFlags srcAccess,
                                        VkAccessFlags dstAccess, size_t offset,
-                                       size_t size)
+                                       uint64_t size)
 {
     VkBufferMemoryBarrier result{VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER};
     result.buffer = buffer;

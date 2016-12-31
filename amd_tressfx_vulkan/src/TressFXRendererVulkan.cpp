@@ -420,7 +420,7 @@ VkResult TressFXRenderer::CreateConstantBuffer(VkDevice pvkDevice,
     cbDesc.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     cbDesc.size = maxUniformBuffer * sizeof(CB_PER_FRAME);
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &cbDesc, nullptr, &m_pcbPerFrame));
-    m_pcbPerFrameMemory = allocBufferMemory(pvkDevice, m_pcbPerFrame, memProperties);
+    m_pcbPerFrameMemory = allocBufferMemory(pvkDevice, m_pcbPerFrame, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     return VK_SUCCESS;
 }

@@ -87,7 +87,7 @@ void GPUOnlyStructuredBuffer::Destroy()
 
 VkResult TressFXShortCut::CreateScreenSizedItems(VkDevice pvkDevice, int winWidth,
                                                  int winHeight,
-                                                 uint32_t texture_memory_index)
+                                                 VkPhysicalDeviceMemoryProperties memProperties)
 {
     m_pvkDevice = pvkDevice;
     VkResult vr;
@@ -99,7 +99,7 @@ VkResult TressFXShortCut::CreateScreenSizedItems(VkDevice pvkDevice, int winWidt
         AMD_V_RETURN(vkCreateImage(pvkDevice, &accumInvAlphaInfo, nullptr,
                                    &m_pAccumInvAlphaTexture));
         m_pAccumInvAlphaMemory =
-            allocImageMemory(pvkDevice, m_pAccumInvAlphaTexture, texture_memory_index);
+            allocImageMemory(pvkDevice, m_pAccumInvAlphaTexture, memProperties);
 
         VkImageViewCreateInfo srDesc{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
         srDesc.format = VK_FORMAT_R16_SFLOAT;
@@ -122,7 +122,7 @@ VkResult TressFXShortCut::CreateScreenSizedItems(VkDevice pvkDevice, int winWidt
                                    &m_pFragmentDepthsTexture));
 
         m_pFragmentDepthsMemory =
-            allocImageMemory(pvkDevice, m_pFragmentDepthsTexture, texture_memory_index);
+            allocImageMemory(pvkDevice, m_pFragmentDepthsTexture, memProperties);
 
         VkImageViewCreateInfo srDesc{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
         srDesc.format = VK_FORMAT_R32_UINT;
@@ -145,7 +145,7 @@ VkResult TressFXShortCut::CreateScreenSizedItems(VkDevice pvkDevice, int winWidt
                                    &m_pFragmentColorsTexture));
 
         m_pFragmentColorsMemory =
-            allocImageMemory(pvkDevice, m_pFragmentColorsTexture, texture_memory_index);
+            allocImageMemory(pvkDevice, m_pFragmentColorsTexture, memProperties);
 
         VkImageViewCreateInfo srDesc{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
         srDesc.format = VK_FORMAT_R16G16B16A16_SFLOAT;
@@ -745,13 +745,13 @@ VkResult TressFXShortCut::OnCreateDevice(
     VkDevice pd3dDevice, int winWidth, int winHeight, VkDescriptorSetLayout mesh_layout,
     VkSampler noiseSamplerRef, VkSampler shadowSamplerRef, VkImageView depthStencilView,
     VkImageView colorView, VkBuffer configBuffer, uint64_t configBufferSize,
-    VkImageView noiseMap, VkImageView hairShadowMap, uint32_t deviceLocalMemoryIndex,
+    VkImageView noiseMap, VkImageView hairShadowMap, VkPhysicalDeviceMemoryProperties memProperties,
     uint32_t width, uint32_t height)
 {
     VkResult vr;
 
     AMD_V_RETURN(
-        CreateScreenSizedItems(pd3dDevice, winWidth, winHeight, deviceLocalMemoryIndex));
+        CreateScreenSizedItems(pd3dDevice, winWidth, winHeight, memProperties));
     AMD_V_RETURN(
         CreateLayouts(pd3dDevice, mesh_layout, noiseSamplerRef, shadowSamplerRef));
     AMD_V_RETURN(CreateRenderStateObjects(pd3dDevice));
@@ -765,13 +765,13 @@ VkResult TressFXShortCut::OnCreateDevice(
 
 VkResult TressFXShortCut::OnResizedSwapChain(VkDevice pd3dDevice, int winWidth,
                                              int winHeight,
-                                             uint32_t deviceLocalMemoryIndex)
+                                             VkPhysicalDeviceMemoryProperties memProperties)
 {
     DestroyScreenSizedItems();
 
     VkResult vr;
     AMD_V_RETURN(
-        CreateScreenSizedItems(pd3dDevice, winWidth, winHeight, deviceLocalMemoryIndex));
+        CreateScreenSizedItems(pd3dDevice, winWidth, winHeight, memProperties));
     return VK_SUCCESS;
 }
 

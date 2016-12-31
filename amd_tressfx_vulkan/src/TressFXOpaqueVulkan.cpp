@@ -183,11 +183,11 @@ bool TressFX_OpaqueDesc::End(TressFX_Desc &desc)
     return true;
 }
 
-bool TressFX_OpaqueDesc::Resize(TressFX_Desc &desc, uint32_t texture_memory_index)
+bool TressFX_OpaqueDesc::Resize(TressFX_Desc &desc, VkPhysicalDeviceMemoryProperties memProperties)
 {
     VkResult vr = tressFXRenderer.OnResizedSwapChain(
         desc.pvkDevice, desc.backBufferWidth, desc.backBufferHeight, desc.bShortCutOn,
-        texture_memory_index);
+		memProperties);
     return (vr == VK_SUCCESS);
 }
 
