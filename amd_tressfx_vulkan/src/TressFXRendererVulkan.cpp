@@ -829,40 +829,24 @@ VkResult TressFXRenderer::AllocateAndPopulateSets(VkDevice pvkDevice, bool isSho
     AMD_CHECKED_VULKAN_CALL(vkCreateDescriptorPool(pvkDevice, &descriptorPoolCreateInfo, nullptr,
                                         &m_descriptorStorage));
 
+    VkDescriptorBufferInfo bufferDescriptor{m_pcbPerFrame, 0, sizeof(CB_PER_FRAME)};
+    VkDescriptorSetAllocateInfo allocateInfo{
+        VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
+    allocateInfo.descriptorPool = m_descriptorStorage;
+    allocateInfo.descriptorSetCount = 1;
+    allocateInfo.pSetLayouts = &m_shadow_pass_config_set_layout;
+    AMD_CHECKED_VULKAN_CALL(
+        vkAllocateDescriptorSets(pvkDevice, &allocateInfo, &m_shadow_pass_set));
     if (!isShortcut)
     {
-        VkDescriptorSetAllocateInfo allocateInfo{
-            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-        allocateInfo.descriptorPool = m_descriptorStorage;
         allocateInfo.descriptorSetCount = 1;
         allocateInfo.pSetLayouts = &m_pass1_config_set_layout;
         AMD_CHECKED_VULKAN_CALL(
             vkAllocateDescriptorSets(pvkDevice, &allocateInfo, &m_pass1_config_set));
-    }
 
-    if (!isShortcut)
-    {
-        VkDescriptorSetAllocateInfo allocate2Info{
-            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-        allocate2Info.descriptorPool = m_descriptorStorage;
-        allocate2Info.descriptorSetCount = 1;
-        allocate2Info.pSetLayouts = &m_pass2_set_layout;
-        AMD_CHECKED_VULKAN_CALL(vkAllocateDescriptorSets(pvkDevice, &allocate2Info, &m_pass2_set));
-    }
-
-    {
-        VkDescriptorSetAllocateInfo allocate3Info{
-            VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
-        allocate3Info.descriptorPool = m_descriptorStorage;
-        allocate3Info.descriptorSetCount = 1;
-        allocate3Info.pSetLayouts = &m_shadow_pass_config_set_layout;
-        AMD_CHECKED_VULKAN_CALL(
-            vkAllocateDescriptorSets(pvkDevice, &allocate3Info, &m_shadow_pass_set));
-    }
-
-    VkDescriptorBufferInfo bufferDescriptor{m_pcbPerFrame, 0, sizeof(CB_PER_FRAME)};
-    if (!isShortcut)
-    {
+        allocateInfo.descriptorSetCount = 1;
+        allocateInfo.pSetLayouts = &m_pass2_set_layout;
+        AMD_CHECKED_VULKAN_CALL(vkAllocateDescriptorSets(pvkDevice, &allocateInfo, &m_pass2_set));
 
         VkDescriptorBufferInfo atomicCounterDescriptor{m_pAtomicCounterPPLLBuffer, 0,
                                                        sizeof(unsigned int)};
