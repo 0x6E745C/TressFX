@@ -360,7 +360,7 @@ const VkPipelineVertexInputStateCreateInfo CommonPipelineState::m_pLayoutQuad{
 
 VkImageMemoryBarrier getImageMemoryBarrier(VkImage image, VkAccessFlags srcMask,
                                            VkAccessFlags dstMask, VkImageLayout oldLayout,
-                                           VkImageLayout newLayout,
+                                           VkImageLayout newLayout, uint32_t layoutCount,
                                            VkImageAspectFlags aspect)
 {
     VkImageMemoryBarrier memoryBarrier{VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER};
@@ -370,8 +370,8 @@ VkImageMemoryBarrier getImageMemoryBarrier(VkImage image, VkAccessFlags srcMask,
     memoryBarrier.newLayout = newLayout;
     memoryBarrier.image = image;
     memoryBarrier.subresourceRange.aspectMask = aspect;
-    memoryBarrier.subresourceRange.levelCount =
-        memoryBarrier.subresourceRange.layerCount = 1;
+	memoryBarrier.subresourceRange.levelCount = 1;
+    memoryBarrier.subresourceRange.layerCount = layoutCount;
     return memoryBarrier;
 }
 

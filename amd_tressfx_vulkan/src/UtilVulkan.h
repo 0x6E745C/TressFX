@@ -110,5 +110,6 @@ struct CommonPipelineState
 VkImageMemoryBarrier
 getImageMemoryBarrier(VkImage image, VkAccessFlags srcMask, VkAccessFlags dstMask,
                       VkImageLayout oldLayout, VkImageLayout newLayout,
-                      VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT);
+                      uint32_t layerCount,
+                      VkImageAspectFlags aspect);
 }
