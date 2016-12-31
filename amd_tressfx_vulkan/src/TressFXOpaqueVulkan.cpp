@@ -29,19 +29,18 @@ void TressFX_OpaqueDesc::Initialize(TressFX_Desc &desc, VkImageView depthTexture
                                     VkCommandBuffer commandBuffer,
                                     VkDeviceMemory scratchMemory, VkBuffer scratchBuffer,
                                     size_t &offsetInScratchBuffer,
-                                    uint32_t cpu_memory_index, uint32_t gpu_memory_index)
+                                    VkPhysicalDeviceMemoryProperties memProperties)
 {
     if (initialized == false)
     {
         refCount = 0;
         tressFXSimulation.OnCreateDevice(desc.pvkDevice, &desc.collisionCapsule,
-                                         desc.maxConstantBuffers, cpu_memory_index,
-                                         gpu_memory_index);
+                                         desc.maxConstantBuffers, memProperties);
         tressFXRenderer.OnCreateDevice(
             desc.pvkDevice, desc.backBufferWidth, desc.backBufferHeight, desc.bShortCutOn,
-            desc.maxConstantBuffers, cpu_memory_index, desc.memoryIndexDeviceLocal,
+            desc.maxConstantBuffers, memProperties,
             depthTexture, colorTexture, commandBuffer, scratchMemory, scratchBuffer,
-            offsetInScratchBuffer);
+            offsetInScratchBuffer, desc.depthStencilFormat, desc.colorFormat);
         initialized = true;
     }
     refCount++;
@@ -68,7 +67,7 @@ bool TressFX_OpaqueDesc::LoadAppendAsset(
 
 bool TressFX_OpaqueDesc::CreateProcessedAsset(
     TressFX_Desc &desc, TressFX_HairBlob **ppHairBlob, TressFX_SceneMesh *sceneMesh,
-    VkImageView hairTexture, uint32_t texture_buffer_memory_index,
+    VkImageView hairTexture, VkPhysicalDeviceMemoryProperties memProperties,
     VkCommandBuffer uploadCmdBuffer, VkBuffer scratchBuffer, VkDeviceMemory scratchMemory)
 {
     tressFXAssetLoader.GenerateFollowHairs();
@@ -90,7 +89,7 @@ bool TressFX_OpaqueDesc::CreateProcessedAsset(
     }
     pTressFXMesh = new TressFXMesh();
     pTressFXMesh->OnCreate(desc.pvkDevice, &desc.tressFXHair, sceneMesh, hairTexture,
-                           texture_buffer_memory_index, uploadCmdBuffer, scratchBuffer,
+                           memProperties, uploadCmdBuffer, scratchBuffer,
                            scratchMemory, tressFXSimulation.m_GlobalConstraintsSetLayout,
                            tressFXSimulation.m_LocalConstraintsSetLayout,
                            tressFXSimulation.m_LenghtWindTangentSetLayout,
@@ -129,7 +128,7 @@ bool TressFX_OpaqueDesc::Simulate(TressFX_Desc &desc, VkCommandBuffer commandBuf
     windDir.z = desc.simulationParams.windDir.z;
     VkResult vr = tressFXSimulation.Simulate(
         desc.pvkDevice, commandBuffer, elapsedTime, desc.hairParams.density, windDir,
-        desc.simulationParams.windMag, &desc.modelTransformForHead, nullptr,
+        desc.simulationParams.windMag, &desc.modelTransformForHead,
         desc.targetFrameRate, desc.bSingleHeadTransform, false, uniformBufferIndex);
 
     return vr == VK_SUCCESS;
@@ -184,11 +183,11 @@ bool TressFX_OpaqueDesc::End(TressFX_Desc &desc)
     return true;
 }
 
-bool TressFX_OpaqueDesc::Resize(TressFX_Desc &desc, uint32_t texture_memory_index)
+bool TressFX_OpaqueDesc::Resize(TressFX_Desc &desc, VkPhysicalDeviceMemoryProperties memProperties)
 {
     VkResult vr = tressFXRenderer.OnResizedSwapChain(
         desc.pvkDevice, desc.backBufferWidth, desc.backBufferHeight, desc.bShortCutOn,
-        texture_memory_index);
+		memProperties);
     return (vr == VK_SUCCESS);
 }
 

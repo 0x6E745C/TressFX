@@ -38,15 +38,14 @@ struct TressFX_OpaqueDesc
     void Initialize(TressFX_Desc &desc, VkImageView depthTexture,
                     VkImageView colorTexture, VkCommandBuffer commandBuffer,
                     VkDeviceMemory scratchMemory, VkBuffer scratchBuffer,
-                    size_t &offsetInScratchBuffer, uint32_t cpu_memory_index,
-                    uint32_t gpu_memory_index);
+                    size_t &offsetInScratchBuffer, VkPhysicalDeviceMemoryProperties memProperties);
     void Release(VkDevice pvkDevice);
 
     bool LoadAppendAsset(TressFX_HairBlob *pRawHairBlob,
                          const TressFX_GuideFollowParams &guideFollowParams, int groupId);
     bool CreateProcessedAsset(TressFX_Desc &desc, TressFX_HairBlob **ppHairBlob,
                               TressFX_SceneMesh *sceneMesh, VkImageView hairTexture,
-                              uint32_t texture_buffer_memory_index,
+                              VkPhysicalDeviceMemoryProperties memProperties,
                               VkCommandBuffer uploadCmdBuffer, VkBuffer scratchBuffer,
                               VkDeviceMemory scratchMemor);
 
@@ -60,7 +59,7 @@ struct TressFX_OpaqueDesc
                   uint32_t uniformBufferIndex);
     bool GenerateTransforms(TressFX_Desc &desc, TressFX_SceneMesh &sceneMesh);
     bool ApplyRigidTransforms(TressFX_Desc &desc);
-    bool Resize(TressFX_Desc &desc, uint32_t texture_memory_index);
+    bool Resize(TressFX_Desc &desc, VkPhysicalDeviceMemoryProperties memProperties);
 
     TressFXSimulation tressFXSimulation; // Hair simulation class
     TressFXRenderer tressFXRenderer;     // Hair rendering class
@@ -68,6 +67,8 @@ struct TressFX_OpaqueDesc
     bool initialized;                      // only initialize this structure once
     TressFXAssetLoader tressFXAssetLoader; // Hair asset loading class
     int refCount;                          // reference count - delete allocations when 0
+    TressFX_OpaqueDesc(const TressFX_OpaqueDesc&) {}
+    TressFX_OpaqueDesc& operator=(const TressFX_OpaqueDesc&) {}
 };
 
 } // namespace AMD

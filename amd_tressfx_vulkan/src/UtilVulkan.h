@@ -3,7 +3,7 @@
 #include <vector>
 #include <vulkan\vulkan.h>
 
-#define AMD_V_RETURN(x)                                                                  \
+#define AMD_CHECKED_VULKAN_CALL(x)                                                                  \
     {                                                                                    \
         vr = (x);                                                                        \
         if (vr != VK_SUCCESS)                                                            \
@@ -11,6 +11,9 @@
             return vr;                                                                   \
         }                                                                                \
     }
+
+#undef AMD_SAFE_RELEASE
+#define AMD_SAFE_RELEASE(object, releaseFunction, device) if (object != VK_NULL_HANDLE) releaseFunction(device, object, nullptr);
 
 namespace AMD
 {
@@ -20,15 +23,19 @@ struct ShaderModule
 
     ShaderModule(VkDevice dev, const std::vector<uint32_t> &code);
     ~ShaderModule();
-
   private:
     VkDevice m_pvkDevice;
+
+    ShaderModule(const ShaderModule&) {};
+    ShaderModule& operator=(const ShaderModule&) {};
 };
 
+uint32_t getMemoryTypeIndex(uint32_t typeBits, const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties);
+VkDeviceSize align(VkDeviceSize offset, VkDeviceSize alignment);
 VkDeviceMemory allocBufferMemory(VkDevice dev, VkBuffer buffer,
-                                 uint32_t texture_memory_index);
+                                 const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties);
 VkDeviceMemory allocImageMemory(VkDevice dev, VkImage image,
-                                uint32_t texture_memory_index);
+                                const VkPhysicalDeviceMemoryProperties &memprops);
 
 VkWriteDescriptorSet getWriteDescriptor(VkDescriptorSet dstSet, uint32_t dstBinding,
                                         VkDescriptorType descriptorType,
@@ -49,8 +56,8 @@ void fillInitialData(VkCommandBuffer commandBuffer, VkBuffer scratchBuffer,
 VkResult getDescriptorLayout(VkDevice pvkDevice, const VkDescriptorSetLayoutBinding *ptr,
                              size_t count, VkDescriptorSetLayout &result);
 VkBufferMemoryBarrier getBufferBarrier(VkBuffer buffer, VkAccessFlags srcAccess,
-                                       VkAccessFlags dstAccess, size_t offset = 0,
-                                       size_t size = VK_WHOLE_SIZE);
+                                       VkAccessFlags dstAccess, size_t offset = 0u,
+                                       uint64_t size = VK_WHOLE_SIZE);
 
 VkPipelineShaderStageCreateInfo getShaderStageCreateInfo(VkShaderModule module,
                                                          VkShaderStageFlagBits stage,
@@ -110,5 +117,6 @@ struct CommonPipelineState
 VkImageMemoryBarrier
 getImageMemoryBarrier(VkImage image, VkAccessFlags srcMask, VkAccessFlags dstMask,
                       VkImageLayout oldLayout, VkImageLayout newLayout,
-                      VkImageAspectFlags aspect = VK_IMAGE_ASPECT_COLOR_BIT);
+                      uint32_t layerCount,
+                      VkImageAspectFlags aspect);
 }

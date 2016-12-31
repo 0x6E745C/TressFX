@@ -163,7 +163,7 @@ VkResult getPipelineLayout(VkDevice pvkDevice, VkDescriptorSetLayout configSetLa
     pipelineInfo.setLayoutCount = AMD_ARRAY_SIZE(setLayouts);
     pipelineInfo.pSetLayouts = setLayouts;
     VkResult vr;
-    AMD_V_RETURN(vkCreatePipelineLayout(pvkDevice, &pipelineInfo, nullptr, &result));
+    AMD_CHECKED_VULKAN_CALL(vkCreatePipelineLayout(pvkDevice, &pipelineInfo, nullptr, &result));
     return VK_SUCCESS;
 }
 }
@@ -230,22 +230,22 @@ VkResult TressFXSimulation::CreateDescriptorSet(VkDevice pvkDevice)
          VK_SHADER_STAGE_COMPUTE_BIT},
     };
 
-    AMD_V_RETURN(getDescriptorLayout(pvkDevice, global_constraints_bindings,
+    AMD_CHECKED_VULKAN_CALL(getDescriptorLayout(pvkDevice, global_constraints_bindings,
                                      AMD_ARRAY_SIZE(global_constraints_bindings),
                                      m_GlobalConstraintsSetLayout));
-    AMD_V_RETURN(getDescriptorLayout(pvkDevice, local_constraints_bindings,
+    AMD_CHECKED_VULKAN_CALL(getDescriptorLayout(pvkDevice, local_constraints_bindings,
                                      AMD_ARRAY_SIZE(local_constraints_bindings),
                                      m_LocalConstraintsSetLayout));
-    AMD_V_RETURN(getDescriptorLayout(pvkDevice, length_wind_collision_bindings,
+    AMD_CHECKED_VULKAN_CALL(getDescriptorLayout(pvkDevice, length_wind_collision_bindings,
                                      AMD_ARRAY_SIZE(length_wind_collision_bindings),
                                      m_LenghtWindTangentSetLayout));
-    AMD_V_RETURN(getDescriptorLayout(pvkDevice, prepare_follow_hair_bindings,
+    AMD_CHECKED_VULKAN_CALL(getDescriptorLayout(pvkDevice, prepare_follow_hair_bindings,
                                      AMD_ARRAY_SIZE(prepare_follow_hair_bindings),
                                      m_PrepareFollowHairSetLayout));
-    AMD_V_RETURN(getDescriptorLayout(pvkDevice, update_follow_hair_bindings,
+    AMD_CHECKED_VULKAN_CALL(getDescriptorLayout(pvkDevice, update_follow_hair_bindings,
                                      AMD_ARRAY_SIZE(update_follow_hair_bindings),
                                      m_UpdateFollowHaitSetLayout));
-    AMD_V_RETURN(getDescriptorLayout(pvkDevice, compute_tangent_bindings,
+    AMD_CHECKED_VULKAN_CALL(getDescriptorLayout(pvkDevice, compute_tangent_bindings,
                                      AMD_ARRAY_SIZE(compute_tangent_bindings),
                                      m_ComputeTangentSetLayout));
 
@@ -254,28 +254,28 @@ VkResult TressFXSimulation::CreateDescriptorSet(VkDevice pvkDevice)
          VK_SHADER_STAGE_COMPUTE_BIT},
         {IDSRV_HEAD_TRANSFORM, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 1,
          VK_SHADER_STAGE_COMPUTE_BIT}};
-    AMD_V_RETURN(getDescriptorLayout(pvkDevice, configBindings,
+    AMD_CHECKED_VULKAN_CALL(getDescriptorLayout(pvkDevice, configBindings,
                                      AMD_ARRAY_SIZE(configBindings), m_configSetLayout));
 
-    AMD_V_RETURN(getPipelineLayout(pvkDevice, m_configSetLayout,
+    AMD_CHECKED_VULKAN_CALL(getPipelineLayout(pvkDevice, m_configSetLayout,
                                    m_GlobalConstraintsSetLayout,
                                    m_CSIntegrationAndGlobalShapeConstraintsLayout));
-    AMD_V_RETURN(getPipelineLayout(pvkDevice, m_configSetLayout,
+    AMD_CHECKED_VULKAN_CALL(getPipelineLayout(pvkDevice, m_configSetLayout,
                                    m_LocalConstraintsSetLayout,
                                    m_CSLocalShapeConstraintsLayout));
-    AMD_V_RETURN(getPipelineLayout(pvkDevice, m_configSetLayout,
+    AMD_CHECKED_VULKAN_CALL(getPipelineLayout(pvkDevice, m_configSetLayout,
                                    m_LocalConstraintsSetLayout,
                                    m_CSLocalShapeConstraintsSingleDispatchLayout));
-    AMD_V_RETURN(getPipelineLayout(pvkDevice, m_configSetLayout,
+    AMD_CHECKED_VULKAN_CALL(getPipelineLayout(pvkDevice, m_configSetLayout,
                                    m_LenghtWindTangentSetLayout,
                                    m_CSLengthConstriantsWindAndCollisionLayout));
-    AMD_V_RETURN(getPipelineLayout(pvkDevice, m_configSetLayout,
+    AMD_CHECKED_VULKAN_CALL(getPipelineLayout(pvkDevice, m_configSetLayout,
                                    m_PrepareFollowHairSetLayout,
                                    m_CSPrepareFollowHairBeforeTurningIntoGuideLayout));
-    AMD_V_RETURN(getPipelineLayout(pvkDevice, m_configSetLayout,
+    AMD_CHECKED_VULKAN_CALL(getPipelineLayout(pvkDevice, m_configSetLayout,
                                    m_UpdateFollowHaitSetLayout,
                                    m_CSUpdateFollowHairVerticesLayout));
-    AMD_V_RETURN(getPipelineLayout(pvkDevice, m_configSetLayout,
+    AMD_CHECKED_VULKAN_CALL(getPipelineLayout(pvkDevice, m_configSetLayout,
                                    m_ComputeTangentSetLayout, m_CSComputeTangentsLayout));
 
     VkDescriptorPoolSize poolSizes[] = {{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC, 1},
@@ -285,7 +285,7 @@ VkResult TressFXSimulation::CreateDescriptorSet(VkDevice pvkDevice)
     descriptorPoolInfo.maxSets = 1;
     descriptorPoolInfo.poolSizeCount = AMD_ARRAY_SIZE(poolSizes);
     descriptorPoolInfo.pPoolSizes = poolSizes;
-    AMD_V_RETURN(vkCreateDescriptorPool(pvkDevice, &descriptorPoolInfo, nullptr,
+    AMD_CHECKED_VULKAN_CALL(vkCreateDescriptorPool(pvkDevice, &descriptorPoolInfo, nullptr,
                                         &m_descriptorPool));
 
     VkDescriptorSetAllocateInfo allocInfo{VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO};
@@ -293,7 +293,7 @@ VkResult TressFXSimulation::CreateDescriptorSet(VkDevice pvkDevice)
     allocInfo.pSetLayouts = &m_configSetLayout;
     allocInfo.descriptorPool = m_descriptorPool;
 
-    AMD_V_RETURN(vkAllocateDescriptorSets(pvkDevice, &allocInfo, &m_configSet));
+    AMD_CHECKED_VULKAN_CALL(vkAllocateDescriptorSets(pvkDevice, &allocInfo, &m_configSet));
 
     return VK_SUCCESS;
 }
@@ -309,17 +309,16 @@ VkResult TressFXSimulation::CreateDescriptorSet(VkDevice pvkDevice)
 VkResult TressFXSimulation::OnCreateDevice(VkDevice pvkDevice,
                                            TressFX_CollisionCapsule *pCollision,
                                            uint32_t maxUniformCount,
-                                           uint32_t cpu_memory_index,
-                                           uint32_t gpu_memory_index)
+                                           VkPhysicalDeviceMemoryProperties memProperties)
 {
     VkResult vr;
-    AMD_V_RETURN(CreateDescriptorSet(pvkDevice));
+    AMD_CHECKED_VULKAN_CALL(CreateDescriptorSet(pvkDevice));
     // reset m_elapsedTimeSinceLastSim to zero
     m_elapsedTimeSinceLastSim = 0;
 
     ShaderModule IntegrationAndGlobalShapeConstraints_Module(pvkDevice,
                                                              global_constraints);
-    // TODO
+
     ShaderModule ApplyHairTransformGlobally_Module(pvkDevice, global_constraints);
     ShaderModule ComputeTangents_Module(pvkDevice, compute_tangents);
     ShaderModule LocalShapeConstraints_Module(pvkDevice, local_constraints);
@@ -329,7 +328,7 @@ VkResult TressFXSimulation::OnCreateDevice(VkDevice pvkDevice,
     ShaderModule UpdateFollowHairVertices_Module(pvkDevice, update_follow_hair);
     ShaderModule PrepareFollowHairBeforeTurningIntoGuide_Data(pvkDevice,
                                                               prepare_follow_hair);
-    // TODO
+
     ShaderModule GenerateTransforms_Module(pvkDevice, global_constraints);
 
     VkComputePipelineCreateInfo computePipelineInfo[] = {
@@ -356,7 +355,7 @@ VkResult TressFXSimulation::OnCreateDevice(VkDevice pvkDevice,
     };
 
     VkPipeline pipelines[9]{};
-    AMD_V_RETURN(vkCreateComputePipelines(pvkDevice, VK_NULL_HANDLE,
+    AMD_CHECKED_VULKAN_CALL(vkCreateComputePipelines(pvkDevice, VK_NULL_HANDLE,
                                           AMD_ARRAY_SIZE(computePipelineInfo),
                                           computePipelineInfo, nullptr, pipelines));
 
@@ -373,8 +372,8 @@ VkResult TressFXSimulation::OnCreateDevice(VkDevice pvkDevice,
     //-------------------------
     // Create constant buffers
     //-------------------------
-    AMD_V_RETURN(CreateComputeShaderConstantBuffers(
-        pvkDevice, pCollision, maxUniformCount, cpu_memory_index, gpu_memory_index));
+    AMD_CHECKED_VULKAN_CALL(CreateComputeShaderConstantBuffers(
+        pvkDevice, pCollision, maxUniformCount, memProperties));
 
     return VK_SUCCESS;
 }
@@ -649,11 +648,9 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
                                      float fElapsedTime, float density,
                                      tressfx_vec3 &windDir, float windMag,
                                      XMMATRIX *pModelTransformForHead,
-                                     ID3D11UnorderedAccessView *pSkinningTransforms,
                                      float targetFrameRate, bool singleHeadTransform,
                                      bool warp, uint32_t uniformBufferIndex)
 {
-    (void)pSkinningTransforms;
     m_elapsedTimeSinceLastSim += fElapsedTime;
     bool bFullSimulate = true;
 
@@ -798,7 +795,7 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
 
     // ConstBufferCS_HeadTransform
     ConstBufferCS_HeadTransform *pCSHeadTransform;
-    AMD_V_RETURN(vkMapMemory(pvkDevice, m_pCBHeadTransformsMemory, 0,
+    AMD_CHECKED_VULKAN_CALL(vkMapMemory(pvkDevice, m_pCBHeadTransformsMemory, 0,
                              sizeof(ConstBufferCS_HeadTransform), 0,
                              reinterpret_cast<void **>(&pCSHeadTransform)));
     {
@@ -999,6 +996,9 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
             getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
                              VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
                              VK_ACCESS_SHADER_READ_BIT),
+            getBufferBarrier(
+                             m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
+                             VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT)
         };
 
         vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -1006,15 +1006,17 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
                              AMD_ARRAY_SIZE(updateFollowHairBarriers),
                              updateFollowHairBarriers, 0, nullptr);
     }
+	else
+	{
+		VkBufferMemoryBarrier makeTangentBarrier[] = { getBufferBarrier(
+			m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
+			VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT) };
 
-    VkBufferMemoryBarrier makeTangentBarrier[] = {getBufferBarrier(
-        m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
-        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT)};
-
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                         AMD_ARRAY_SIZE(makeTangentBarrier), makeTangentBarrier, 0,
-                         nullptr);
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+			AMD_ARRAY_SIZE(makeTangentBarrier), makeTangentBarrier, 0,
+			nullptr);
+	}
 
     // Compute tangents for every vertex (guide + follow)
     {
@@ -1055,8 +1057,7 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
 //--------------------------------------------------------------------------------------
 VkResult TressFXSimulation::CreateComputeShaderConstantBuffers(
     VkDevice pvkDevice, TressFX_CollisionCapsule *pCollision,
-    uint32_t maxUniformBufferCount, uint32_t cpu_memory_index,
-    uint32_t texture_memory_index)
+    uint32_t maxUniformBufferCount, VkPhysicalDeviceMemoryProperties memProperties)
 {
     (void)pCollision;
     VkResult vr = VK_SUCCESS;
@@ -1065,16 +1066,16 @@ VkResult TressFXSimulation::CreateComputeShaderConstantBuffers(
     // FIXME: Uniform buffer + compute shader crash nvidia driver
     Desc.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
     Desc.size = maxUniformBufferCount * sizeof(ConstBufferCS_Per_Frame);
-    AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBCSPerFrame));
+    AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBCSPerFrame));
     m_pCBCSPerFrameMemory =
-        allocBufferMemory(pvkDevice, m_pCBCSPerFrame, cpu_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBCSPerFrame, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // const buffer for capsule collision
     Desc.size = sizeof(TressFX_CollisionCapsule);
     // data.pSysMem = (void *)pCollision;
-    AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBCSCollisionCapsule));
+    AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBCSCollisionCapsule));
     m_pCBCSCollisionCapsuleMemory =
-        allocBufferMemory(pvkDevice, m_pCBCSCollisionCapsule, texture_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBCSCollisionCapsule, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     /*    void* scratch_buffer_mapped_memory;
         vkMapMemory(pvkDevice, ..., 0, sizeof(TressFX_CollisionCapsule), 0,
@@ -1086,15 +1087,15 @@ VkResult TressFXSimulation::CreateComputeShaderConstantBuffers(
 
     // const buffer for hair root transformation
     Desc.size = sizeof(TransformConstantBuffer);
-    AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBGenerateTransforms));
+    AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBGenerateTransforms));
     m_pCBGenerateTransformsMemory =
-        allocBufferMemory(pvkDevice, m_pCBGenerateTransforms, cpu_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBGenerateTransforms, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // const buffer for head transformation
     Desc.size = sizeof(ConstBufferCS_HeadTransform);
-    AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBHeadTransforms));
+    AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBHeadTransforms));
     m_pCBHeadTransformsMemory =
-        allocBufferMemory(pvkDevice, m_pCBHeadTransforms, cpu_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBHeadTransforms, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDescriptorBufferInfo perFrameCBCS{m_pCBCSPerFrame, 0,
                                         sizeof(ConstBufferCS_Per_Frame)};
