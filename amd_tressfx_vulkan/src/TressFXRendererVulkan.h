@@ -133,7 +133,7 @@ class TressFXRenderer
                                  VkDeviceMemory scratchMemory, VkBuffer scratchBuffer,
                                  size_t &offsetInScratchBuffer);
     VkResult CreateSamplers(VkDevice pvkDevice);
-    VkResult CreateRenderStateObjects(VkDevice pvkDevice);
+    VkResult CreateRenderStateObjects(VkDevice pvkDevice, VkFormat depthStencilFormat, VkFormat colorFormat);
     VkResult CreatePPLL(VkDevice pvkDevice, int winWidth, int winHeight, bool resize,
 		VkPhysicalDeviceMemoryProperties memProperties);
     VkResult CreateLayouts(VkDevice pvkDevice);
@@ -151,7 +151,8 @@ class TressFXRenderer
                             VkPhysicalDeviceMemoryProperties memProperties,
                             VkImageView depthTexture, VkImageView colorTexture,
                             VkCommandBuffer commandBuffer, VkDeviceMemory scratchMemory,
-                            VkBuffer scratchBuffer, size_t &offsetInScratchBuffer);
+                            VkBuffer scratchBuffer, size_t &offsetInScratchBuffer,
+                            VkFormat depthStencilFormat, VkFormat colorFormat);
     VkResult OnResizedSwapChain(VkDevice pvkDevice, int winWidth, int WinHeight,
                                 bool bShortCutOn, VkPhysicalDeviceMemoryProperties memProperties);
     void BeginHairFrame(VkDevice pvkDevice, DirectX::XMVECTOR eyePoint,

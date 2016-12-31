@@ -184,13 +184,13 @@ VkAttachmentDescription getAttachmentDescription(
             inoutLayout};
 }
 
-VkRenderPass createRenderPass(VkDevice pvkDevice)
+VkRenderPass createRenderPass(VkDevice pvkDevice, VkFormat depthStencilFormat, VkFormat colorFormat)
 {
     VkRenderPassCreateInfo info{VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO};
 
     const VkAttachmentDescription attachments[] = {
         // DS
-        getAttachmentDescription(VK_FORMAT_D24_UNORM_S8_UINT, VK_ATTACHMENT_LOAD_OP_LOAD,
+        getAttachmentDescription(depthStencilFormat, VK_ATTACHMENT_LOAD_OP_LOAD,
                                  VK_ATTACHMENT_STORE_OP_STORE,
                                  VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
                                  VK_ATTACHMENT_LOAD_OP_CLEAR,
@@ -208,7 +208,7 @@ VkRenderPass createRenderPass(VkDevice pvkDevice)
 // TODO
 #endif
         // Result
-        getAttachmentDescription(VK_FORMAT_R8G8B8A8_SNORM, VK_ATTACHMENT_LOAD_OP_LOAD,
+        getAttachmentDescription(colorFormat, VK_ATTACHMENT_LOAD_OP_LOAD,
                                  VK_ATTACHMENT_STORE_OP_STORE,
                                  VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL),
 
@@ -294,9 +294,9 @@ VkRenderPass createRenderPass(VkDevice pvkDevice)
 // Creates the pipelines for hair rendering
 //
 //--------------------------------------------------------------------------------------
-VkResult TressFXShortCut::CreateRenderStateObjects(VkDevice pvkDevice)
+VkResult TressFXShortCut::CreateRenderStateObjects(VkDevice pvkDevice, VkFormat depthStencilFormat, VkFormat colorFormat)
 {
-    m_pRPRenderHair = createRenderPass(pvkDevice);
+    m_pRPRenderHair = createRenderPass(pvkDevice, depthStencilFormat, colorFormat);
 
     ShaderModule m_pPSDepthsAlpha(pvkDevice, depth_hair_data);
     ShaderModule m_pPSFillColors(pvkDevice, fillcolors_hair_data);
@@ -735,7 +735,7 @@ VkResult TressFXShortCut::OnCreateDevice(
     VkSampler noiseSamplerRef, VkSampler shadowSamplerRef, VkImageView depthStencilView,
     VkImageView colorView, VkBuffer configBuffer, uint64_t configBufferSize,
     VkImageView noiseMap, VkImageView hairShadowMap, VkPhysicalDeviceMemoryProperties memProperties,
-    uint32_t width, uint32_t height)
+    uint32_t width, uint32_t height, VkFormat depthStencilFormat, VkFormat colorFormat)
 {
     VkResult vr;
 
@@ -743,7 +743,7 @@ VkResult TressFXShortCut::OnCreateDevice(
         CreateScreenSizedItems(pd3dDevice, winWidth, winHeight, memProperties));
     AMD_CHECKED_VULKAN_CALL(
         CreateLayouts(pd3dDevice, mesh_layout, noiseSamplerRef, shadowSamplerRef));
-    AMD_CHECKED_VULKAN_CALL(CreateRenderStateObjects(pd3dDevice));
+    AMD_CHECKED_VULKAN_CALL(CreateRenderStateObjects(pd3dDevice, depthStencilFormat, colorFormat));
     AMD_CHECKED_VULKAN_CALL(
         CreateFramebuffer(pd3dDevice, depthStencilView, colorView, width, height));
     AMD_CHECKED_VULKAN_CALL(AllocateAndPopulateSets(pd3dDevice, configBuffer, configBufferSize,

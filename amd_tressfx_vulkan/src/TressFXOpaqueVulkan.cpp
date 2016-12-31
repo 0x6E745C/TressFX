@@ -40,7 +40,7 @@ void TressFX_OpaqueDesc::Initialize(TressFX_Desc &desc, VkImageView depthTexture
             desc.pvkDevice, desc.backBufferWidth, desc.backBufferHeight, desc.bShortCutOn,
             desc.maxConstantBuffers, memProperties,
             depthTexture, colorTexture, commandBuffer, scratchMemory, scratchBuffer,
-            offsetInScratchBuffer);
+            offsetInScratchBuffer, desc.depthStencilFormat, desc.colorFormat);
         initialized = true;
     }
     refCount++;

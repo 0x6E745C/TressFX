@@ -94,7 +94,7 @@ class TressFXShortCut
     VkResult CreateScreenSizedItems(VkDevice pvkDevice, int winWidth, int winHeight,
                                     VkPhysicalDeviceMemoryProperties memProperties);
     void DestroyScreenSizedItems();
-    VkResult CreateRenderStateObjects(VkDevice pvkDevice);
+    VkResult CreateRenderStateObjects(VkDevice pvkDevice, VkFormat depthStencilFormat, VkFormat colorFormat);
     VkResult CreateLayouts(VkDevice pvkDevice, VkDescriptorSetLayout SLMesh,
                            VkSampler noiseSamplerRef, VkSampler shadowSamplerRef);
     VkResult CreateFramebuffer(VkDevice pvkDevice, VkImageView depthStencilView,
@@ -120,7 +120,7 @@ class TressFXShortCut
                             VkImageView colorView, VkBuffer configBuffer,
                             uint64_t configBufferSize, VkImageView noiseMap,
                             VkImageView hairShadowMap, VkPhysicalDeviceMemoryProperties memProperties,
-                            uint32_t width, uint32_t height);
+                            uint32_t width, uint32_t height, VkFormat depthStencilFormat, VkFormat colorFormat);
     VkResult OnResizedSwapChain(VkDevice pvkDevice, int winWidth, int WinHeight,
                                 VkPhysicalDeviceMemoryProperties memProperties);
 

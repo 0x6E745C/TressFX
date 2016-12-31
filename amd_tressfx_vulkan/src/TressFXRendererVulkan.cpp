@@ -134,17 +134,17 @@ namespace
 // Create the render pass used for the non shortcut algorithm
 //
 //----------------------------------------------------------------------------------
-VkRenderPass CreateRenderPass(VkDevice dev)
+VkRenderPass CreateRenderPass(VkDevice dev, VkFormat depthStencilFormat, VkFormat colorFormat)
 {
     const VkAttachmentDescription attachments[] = {
         // Depth Buffer
-        {0, VK_FORMAT_D24_UNORM_S8_UINT, VK_SAMPLE_COUNT_1_BIT,
+        {0, depthStencilFormat, VK_SAMPLE_COUNT_1_BIT,
          VK_ATTACHMENT_LOAD_OP_LOAD, VK_ATTACHMENT_STORE_OP_STORE,
          VK_ATTACHMENT_LOAD_OP_CLEAR, VK_ATTACHMENT_STORE_OP_DONT_CARE,
          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL,
          VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL},
         // color texture
-        {0, VK_FORMAT_R8G8B8A8_SRGB, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD,
+        {0, colorFormat, VK_SAMPLE_COUNT_1_BIT, VK_ATTACHMENT_LOAD_OP_LOAD,
          VK_ATTACHMENT_STORE_OP_STORE, VK_ATTACHMENT_LOAD_OP_DONT_CARE,
          VK_ATTACHMENT_STORE_OP_DONT_CARE, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
          VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL}};
@@ -473,11 +473,11 @@ VkResult TressFXRenderer::CreateSamplers(VkDevice pvkDevice)
 // Creates the render state objects for hair rendering
 //
 //--------------------------------------------------------------------------------------
-VkResult TressFXRenderer::CreateRenderStateObjects(VkDevice pvkDevice)
+VkResult TressFXRenderer::CreateRenderStateObjects(VkDevice pvkDevice, VkFormat depthStencilFormat, VkFormat colorFormat)
 {
     VkResult vr;
 
-    m_pRPHairRendering = CreateRenderPass(pvkDevice);
+    m_pRPHairRendering = CreateRenderPass(pvkDevice, depthStencilFormat, colorFormat);
     ShaderModule fragmentShadersModule(pvkDevice, pass1_fragment);
 
     ShaderModule vertexShadersModule(pvkDevice, render_hair_aa_strand_copies_vertex);
@@ -610,7 +610,8 @@ VkResult TressFXRenderer::OnCreateDevice(
     VkDevice pvkDevice, int winWidth, int winHeight, bool bShortCutOn,
     uint32_t maxUniformBuffer, VkPhysicalDeviceMemoryProperties memProperties,
     VkImageView depthTexture, VkImageView colorTexture, VkCommandBuffer commandBuffer,
-    VkDeviceMemory scratchMemory, VkBuffer scratchBuffer, size_t &offsetInScratchBuffer)
+    VkDeviceMemory scratchMemory, VkBuffer scratchBuffer, size_t &offsetInScratchBuffer,
+    VkFormat depthStencilFormat, VkFormat colorFormat)
 {
     m_pvkDevice = pvkDevice;
     VkResult vr;
@@ -642,7 +643,7 @@ VkResult TressFXRenderer::OnCreateDevice(
                                   m_pSamplerStateLinearWrap, m_pSamplerStatePointClamp,
                                   depthTexture, colorTexture, m_pcbPerFrame,
                                   sizeof(CB_PER_FRAME), m_pNoiseView, m_pSMHairView,
-                                  memProperties, winWidth, winHeight);
+                                  memProperties, winWidth, winHeight, depthStencilFormat, colorFormat);
 
         VkImageMemoryBarrier barriers[] = {
             getImageMemoryBarrier(m_ShortCut.m_pAccumInvAlphaTexture, 0,
@@ -665,7 +666,7 @@ VkResult TressFXRenderer::OnCreateDevice(
                              nullptr, AMD_ARRAY_SIZE(barriers), barriers);
     }
 
-    AMD_CHECKED_VULKAN_CALL(CreateRenderStateObjects(pvkDevice));
+    AMD_CHECKED_VULKAN_CALL(CreateRenderStateObjects(pvkDevice, depthStencilFormat, colorFormat));
     AMD_CHECKED_VULKAN_CALL(AllocateAndPopulateSets(pvkDevice, bShortCutOn));
     AMD_CHECKED_VULKAN_CALL(
         CreateFrameBuffer(pvkDevice, depthTexture, colorTexture, winWidth, winHeight));
