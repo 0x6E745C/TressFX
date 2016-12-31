@@ -128,7 +128,7 @@ bool TressFX_OpaqueDesc::Simulate(TressFX_Desc &desc, VkCommandBuffer commandBuf
     windDir.z = desc.simulationParams.windDir.z;
     VkResult vr = tressFXSimulation.Simulate(
         desc.pvkDevice, commandBuffer, elapsedTime, desc.hairParams.density, windDir,
-        desc.simulationParams.windMag, &desc.modelTransformForHead, nullptr,
+        desc.simulationParams.windMag, &desc.modelTransformForHead,
         desc.targetFrameRate, desc.bSingleHeadTransform, false, uniformBufferIndex);
 
     return vr == VK_SUCCESS;

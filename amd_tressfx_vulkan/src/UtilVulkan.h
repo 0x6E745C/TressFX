@@ -3,7 +3,7 @@
 #include <vector>
 #include <vulkan\vulkan.h>
 
-#define AMD_V_RETURN(x)                                                                  \
+#define AMD_CHECKED_VULKAN_CALL(x)                                                                  \
     {                                                                                    \
         vr = (x);                                                                        \
         if (vr != VK_SUCCESS)                                                            \
@@ -11,6 +11,9 @@
             return vr;                                                                   \
         }                                                                                \
     }
+
+#undef AMD_SAFE_RELEASE
+#define AMD_SAFE_RELEASE(object, releaseFunction, device) if (object != VK_NULL_HANDLE) releaseFunction(device, object, nullptr);
 
 namespace AMD
 {
@@ -20,9 +23,11 @@ struct ShaderModule
 
     ShaderModule(VkDevice dev, const std::vector<uint32_t> &code);
     ~ShaderModule();
-
   private:
     VkDevice m_pvkDevice;
+
+    ShaderModule(const ShaderModule&) {};
+    ShaderModule& operator=(const ShaderModule&) {};
 };
 
 VkDeviceMemory allocBufferMemory(VkDevice dev, VkBuffer buffer,

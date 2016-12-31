@@ -125,7 +125,7 @@ VkResult getDescriptorLayout(VkDevice pvkDevice, const VkDescriptorSetLayoutBind
     info.pBindings = ptr;
 
     VkResult vr;
-    AMD_V_RETURN(vkCreateDescriptorSetLayout(pvkDevice, &info, nullptr, &result));
+    AMD_CHECKED_VULKAN_CALL(vkCreateDescriptorSetLayout(pvkDevice, &info, nullptr, &result));
     return VK_SUCCESS;
 }
 
@@ -233,7 +233,7 @@ VkGraphicsPipelineCreateInfo CommonPipelineState::getBasePipelineCreateInfo(
 namespace
 {
 VkPipelineDepthStencilStateCreateInfo
-getSpecializedDSS(bool depth_test_enable, bool depth_write_enable,
+getSpecializedDepthStencilState(bool depth_test_enable, bool depth_write_enable,
                   bool stencil_test_enable, VkCompareOp stencil_op, VkStencilOp pass_op,
                   uint32_t write_mask)
 {
@@ -287,9 +287,9 @@ const VkPipelineColorBlendAttachmentState m_pSum_BS_render_target_0{
         VK_COLOR_COMPONENT_A_BIT};
 
 // Full screen quad layout structure
-const VkVertexInputBindingDescription layout_quad_bindings[1] = {
+const VkVertexInputBindingDescription layout_fullscreen_quad_bindings[1] = {
     {0, 32, VK_VERTEX_INPUT_RATE_VERTEX}};
-const VkVertexInputAttributeDescription layout_quad[3] = {
+const VkVertexInputAttributeDescription layout_fullscreen_quad[3] = {
     {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},  // POSITION
     {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 12}, // TANGENT
     {2, 0, VK_FORMAT_R32G32_SFLOAT, 24},    // TEXCOORD
@@ -297,17 +297,17 @@ const VkVertexInputAttributeDescription layout_quad[3] = {
 }
 
 const VkPipelineDepthStencilStateCreateInfo CommonPipelineState::DepthTestEnabledDesc =
-    getSpecializedDSS(true, true, false, VK_COMPARE_OP_NEVER, VK_STENCIL_OP_KEEP, 0xff);
+    getSpecializedDepthStencilState(true, true, false, VK_COMPARE_OP_NEVER, VK_STENCIL_OP_KEEP, 0xff);
 const VkPipelineDepthStencilStateCreateInfo
     CommonPipelineState::DepthTestEnabledNoDepthWritesStencilWriteIncrementDesc =
-        getSpecializedDSS(true, false, true, VK_COMPARE_OP_ALWAYS,
+        getSpecializedDepthStencilState(true, false, true, VK_COMPARE_OP_ALWAYS,
                           VK_STENCIL_OP_INCREMENT_AND_WRAP, 0xff);
 const VkPipelineDepthStencilStateCreateInfo
-    CommonPipelineState::DepthTestDisabledStencilTestLessDSS = getSpecializedDSS(
+    CommonPipelineState::DepthTestDisabledStencilTestLessDSS = getSpecializedDepthStencilState(
         false, false, true, VK_COMPARE_OP_LESS, VK_STENCIL_OP_KEEP, 0x00);
 const VkPipelineDepthStencilStateCreateInfo
     CommonPipelineState::m_pDepthWriteEnabledStencilTestLess_DSS =
-        getSpecializedDSS(true, true, true, VK_COMPARE_OP_LESS, VK_STENCIL_OP_KEEP, 0x0);
+        getSpecializedDepthStencilState(true, true, true, VK_COMPARE_OP_LESS, VK_STENCIL_OP_KEEP, 0x0);
 
 // disable color write if there is no need for fragments counting
 const VkPipelineColorBlendStateCreateInfo CommonPipelineState::ColorWritesOff{
@@ -354,9 +354,9 @@ const VkPipelineVertexInputStateCreateInfo CommonPipelineState::m_pLayoutQuad{
     nullptr,
     0,
     1,
-    layout_quad_bindings,
+    layout_fullscreen_quad_bindings,
     3,
-    layout_quad};
+    layout_fullscreen_quad};
 
 VkImageMemoryBarrier getImageMemoryBarrier(VkImage image, VkAccessFlags srcMask,
                                            VkAccessFlags dstMask, VkImageLayout oldLayout,

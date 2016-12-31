@@ -67,6 +67,8 @@ struct TressFX_OpaqueDesc
     bool initialized;                      // only initialize this structure once
     TressFXAssetLoader tressFXAssetLoader; // Hair asset loading class
     int refCount;                          // reference count - delete allocations when 0
+    TressFX_OpaqueDesc(const TressFX_OpaqueDesc&) {}
+    TressFX_OpaqueDesc& operator=(const TressFX_OpaqueDesc&) {}
 };
 
 } // namespace AMD

@@ -52,16 +52,8 @@ class TressFXSimulation
     VkResult Simulate(VkDevice pvkContext, VkCommandBuffer commandBuffer,
                       float fElapsedTime, float density, tressfx_vec3 &windDir,
                       float windMag, DirectX::XMMATRIX *pModelTransformForHead,
-                      ID3D11UnorderedAccessView *pSkinningTransforms,
                       float targetFrameRate, bool singleHeadTransform, bool warp,
                       uint32_t uniformBufferIndex);
-    VkResult GenerateTransforms(VkDevice pvkContext, TressFX_SceneMesh sceneMesh,
-                                ID3D11UnorderedAccessView **ppSkinningTransformationsUAV,
-                                DirectX::XMMATRIX *pModelTransformForHead);
-    VkResult ApplyTransformGlobally(VkDevice pvkContext,
-                                    ID3D11UnorderedAccessView *pSkinningTransforms,
-                                    float density, bool singleHeadTransform,
-                                    DirectX::XMMATRIX *pModelTransformForHead);
     void OnDestroy(VkDevice pvkDevice);
     TressFXMesh *m_pTressFXMesh;
     float m_elapsedTimeSinceLastSim;
