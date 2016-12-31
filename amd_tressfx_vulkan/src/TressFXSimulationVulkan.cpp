@@ -996,6 +996,9 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
             getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
                              VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
                              VK_ACCESS_SHADER_READ_BIT),
+            getBufferBarrier(
+                             m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
+                             VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT)
         };
 
         vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
@@ -1003,15 +1006,17 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
                              AMD_ARRAY_SIZE(updateFollowHairBarriers),
                              updateFollowHairBarriers, 0, nullptr);
     }
+	else
+	{
+		VkBufferMemoryBarrier makeTangentBarrier[] = { getBufferBarrier(
+			m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
+			VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT) };
 
-    VkBufferMemoryBarrier makeTangentBarrier[] = {getBufferBarrier(
-        m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
-        VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT)};
-
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                         AMD_ARRAY_SIZE(makeTangentBarrier), makeTangentBarrier, 0,
-                         nullptr);
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+			AMD_ARRAY_SIZE(makeTangentBarrier), makeTangentBarrier, 0,
+			nullptr);
+	}
 
     // Compute tangents for every vertex (guide + follow)
     {
