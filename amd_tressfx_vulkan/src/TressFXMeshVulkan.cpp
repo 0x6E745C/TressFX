@@ -131,7 +131,7 @@ TressFXMesh::~TressFXMesh(void) { OnDestroy(); }
 //--------------------------------------------------------------------------------------
 VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
                                TressFX_SceneMesh *sceneMesh, VkImageView pTexture,
-                               uint32_t texture_buffer_memory_index,
+                               VkPhysicalDeviceMemoryProperties memProperties,
                                VkCommandBuffer upload_cmd_buffer, VkBuffer scratchBuffer,
                                VkDeviceMemory scratchMemory,
                                VkDescriptorSetLayout GlobalConstraintsSetLayout,
@@ -166,7 +166,7 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
 
         AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pThicknessCoeffsBuffer));
         m_pThicknessCoeffsMemory = allocBufferMemory(pvkDevice, m_pThicknessCoeffsBuffer,
-                                                     texture_buffer_memory_index);
+                                                     memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pThicknessCoeffs, m_pThicknessCoeffsBuffer,
@@ -197,7 +197,7 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
 
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pIndexBuffer));
     m_pIndexMemory =
-        allocBufferMemory(pvkDevice, m_pIndexBuffer, texture_buffer_memory_index);
+        allocBufferMemory(pvkDevice, m_pIndexBuffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                     &m_HairAsset.m_LineIndices[0], m_pIndexBuffer, offsetInUploadBuffer,
@@ -209,7 +209,7 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
 
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pTriangleIndexBuffer));
     m_pTriangleIndexMemory =
-        allocBufferMemory(pvkDevice, m_pTriangleIndexBuffer, texture_buffer_memory_index);
+        allocBufferMemory(pvkDevice, m_pTriangleIndexBuffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
     fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                     &m_HairAsset.m_TriangleIndices[0], m_pTriangleIndexBuffer,
@@ -219,7 +219,7 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
 
     m_pHairTextureSRV = pTexture;
 
-    vr = CreateBufferAndViews(pvkDevice, sceneMesh, texture_buffer_memory_index,
+    vr = CreateBufferAndViews(pvkDevice, sceneMesh, memProperties,
                               upload_cmd_buffer, scratchBuffer, scratchMemory,
                               offsetInUploadBuffer);
     vr =
@@ -269,7 +269,7 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
 //--------------------------------------------------------------------------------------
 VkResult TressFXMesh::CreateBufferAndViews(
     VkDevice pvkDevice, TressFX_SceneMesh *sceneMesh,
-    uint32_t texture_buffer_memory_index, VkCommandBuffer upload_cmd_buffer,
+    VkPhysicalDeviceMemoryProperties memProp, VkCommandBuffer upload_cmd_buffer,
     VkBuffer scratchBuffer, VkDeviceMemory scratchMemory, size_t &offsetInUploadBuffer)
 {
     VkResult vr;
@@ -311,7 +311,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(
             vkCreateBuffer(pvkDevice, &bufferDesc, nullptr, &m_HairStrandTypeBuffer));
         m_HairStrandTypeMemory = allocBufferMemory(pvkDevice, m_HairStrandTypeBuffer,
-                                                   texture_buffer_memory_index);
+                                                   memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         VkBufferViewCreateInfo SRVDesc{VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO};
         SRVDesc.format = VK_FORMAT_R32_SINT;
@@ -338,7 +338,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bufferDesc, nullptr,
                                     &m_InitialHairPositionsBuffer));
         m_InitialHairPositionsMemory = allocBufferMemory(
-            pvkDevice, m_InitialHairPositionsBuffer, texture_buffer_memory_index);
+            pvkDevice, m_InitialHairPositionsBuffer, memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         VkBufferViewCreateInfo desc{VK_STRUCTURE_TYPE_BUFFER_VIEW_CREATE_INFO};
         desc.format = VK_FORMAT_R32G32B32A32_SFLOAT;
@@ -369,9 +369,9 @@ VkResult TressFXMesh::CreateBufferAndViews(
                                     &m_HairVertexPositionsPrevBuffer));
 
         m_HairVertexPositionsMemory = allocBufferMemory(
-            pvkDevice, m_HairVertexPositionsBuffer, texture_buffer_memory_index);
+            pvkDevice, m_HairVertexPositionsBuffer, memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         m_HairVertexPositionsPrevMemory = allocBufferMemory(
-            pvkDevice, m_HairVertexPositionsPrevBuffer, texture_buffer_memory_index);
+            pvkDevice, m_HairVertexPositionsPrevBuffer, memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         // TODO: We could write only once to uploadBuffer and share data between
         // the
         // 3 buffers
@@ -396,7 +396,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bufferDescUA, nullptr,
                                     &m_HairVertexTangentsBuffer));
         m_HairVertexTangentsMemory = allocBufferMemory(
-            pvkDevice, m_HairVertexTangentsBuffer, texture_buffer_memory_index);
+            pvkDevice, m_HairVertexTangentsBuffer, memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pTangents, m_HairVertexTangentsBuffer,
                         offsetInUploadBuffer, bufferDescUA.size);
@@ -454,7 +454,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(
             vkCreateBuffer(pvkDevice, &bufferDesc, nullptr, &m_HairLengthBuffer));
         m_HairLengthMemory =
-            allocBufferMemory(pvkDevice, m_HairLengthBuffer, texture_buffer_memory_index);
+            allocBufferMemory(pvkDevice, m_HairLengthBuffer, memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pRestLengths, m_HairLengthBuffer,
@@ -481,7 +481,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(
             vkCreateBuffer(pvkDevice, &bufferDesc, nullptr, &m_HairRefVectorsBuffer));
         m_HairRefVectorsMemory = allocBufferMemory(pvkDevice, m_HairRefVectorsBuffer,
-                                                   texture_buffer_memory_index);
+                                                   memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pRefVectors, m_HairRefVectorsBuffer,
@@ -508,7 +508,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bufferDesc, nullptr,
                                     &m_FollowHairRootOffsetBuffer));
         m_FollowHairRootOffsetMemory = allocBufferMemory(
-            pvkDevice, m_FollowHairRootOffsetBuffer, texture_buffer_memory_index);
+            pvkDevice, m_FollowHairRootOffsetBuffer, memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pFollowRootOffset, m_FollowHairRootOffsetBuffer,
@@ -535,7 +535,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(
             vkCreateBuffer(pvkDevice, &bufferDescUA, nullptr, &m_GlobalRotationsBuffer));
         m_GlobalRotationsMemory = allocBufferMemory(pvkDevice, m_GlobalRotationsBuffer,
-                                                    texture_buffer_memory_index);
+                                                    memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pGlobalRotations, m_GlobalRotationsBuffer,
@@ -562,7 +562,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
         AMD_V_RETURN(
             vkCreateBuffer(pvkDevice, &bufferDescUA, nullptr, &m_LocalRotationsBuffer));
         m_LocalRotationsMemory = allocBufferMemory(pvkDevice, m_LocalRotationsBuffer,
-                                                   texture_buffer_memory_index);
+                                                   memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pLocalRotations, m_LocalRotationsBuffer,
@@ -682,7 +682,7 @@ VkResult TressFXMesh::CreateBufferAndViews(
             AMD_V_RETURN(vkCreateBuffer(pvkDevice, &bufferDesc, nullptr,
                                         &m_pStrandTexCoordBuffer));
             m_pStrandTexCoordMemory = allocBufferMemory(
-                pvkDevice, m_pStrandTexCoordBuffer, texture_buffer_memory_index);
+                pvkDevice, m_pStrandTexCoordBuffer, memProp, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
             fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                             m_HairAsset.m_pStrandTexCoords, m_pStrandTexCoordBuffer,
@@ -836,7 +836,7 @@ VkResult TressFXMesh::AllocateDescriptorsSets(
 }
 
 #define AMD_SAFE_RELEASE(object, releaseFunction, device)                                \
-    if (object != nullptr)                                                               \
+    if (object != VK_NULL_HANDLE)                                                               \
         releaseFunction(device, object, nullptr);
 
 //--------------------------------------------------------------------------------------

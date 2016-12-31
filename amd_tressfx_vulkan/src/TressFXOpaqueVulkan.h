@@ -38,15 +38,14 @@ struct TressFX_OpaqueDesc
     void Initialize(TressFX_Desc &desc, VkImageView depthTexture,
                     VkImageView colorTexture, VkCommandBuffer commandBuffer,
                     VkDeviceMemory scratchMemory, VkBuffer scratchBuffer,
-                    size_t &offsetInScratchBuffer, uint32_t cpu_memory_index,
-                    uint32_t gpu_memory_index);
+                    size_t &offsetInScratchBuffer, VkPhysicalDeviceMemoryProperties memProperties);
     void Release(VkDevice pvkDevice);
 
     bool LoadAppendAsset(TressFX_HairBlob *pRawHairBlob,
                          const TressFX_GuideFollowParams &guideFollowParams, int groupId);
     bool CreateProcessedAsset(TressFX_Desc &desc, TressFX_HairBlob **ppHairBlob,
                               TressFX_SceneMesh *sceneMesh, VkImageView hairTexture,
-                              uint32_t texture_buffer_memory_index,
+                              VkPhysicalDeviceMemoryProperties memProperties,
                               VkCommandBuffer uploadCmdBuffer, VkBuffer scratchBuffer,
                               VkDeviceMemory scratchMemor);
 

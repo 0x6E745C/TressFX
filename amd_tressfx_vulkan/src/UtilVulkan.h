@@ -26,9 +26,9 @@ struct ShaderModule
 };
 
 VkDeviceMemory allocBufferMemory(VkDevice dev, VkBuffer buffer,
-                                 uint32_t texture_memory_index);
+                                 const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties);
 VkDeviceMemory allocImageMemory(VkDevice dev, VkImage image,
-                                uint32_t texture_memory_index);
+                                const VkPhysicalDeviceMemoryProperties &memprops);
 
 VkWriteDescriptorSet getWriteDescriptor(VkDescriptorSet dstSet, uint32_t dstBinding,
                                         VkDescriptorType descriptorType,

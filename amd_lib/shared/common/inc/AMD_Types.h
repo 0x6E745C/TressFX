@@ -159,7 +159,7 @@ namespace AMD
 #ifndef VULKAN
 #define AMD_SAFE_RELEASE(p)       { if (p) { (p)->Release(); } (p) = nullptr; }
 #else
-#define AMD_SAFE_RELEASE(object, releaseFunction, device) if (object != nullptr) releaseFunction(device, object, nullptr);
+#define AMD_SAFE_RELEASE(object, releaseFunction, device) if (object != VK_NULL_HANDLE) releaseFunction(device, object, nullptr);
 #endif
 #endif
 

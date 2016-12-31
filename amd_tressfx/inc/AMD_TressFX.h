@@ -272,8 +272,7 @@ struct TressFX_Desc
     ID3D11RenderTargetView*         pd3dOutputRTV;
 #else
     VkDevice                        pvkDevice;
-    uint32_t                        memoryIndexDeviceLocal;
-	uint32_t                        memoryIndexHostVisible;
+	VkPhysicalDeviceMemoryProperties memoryProperties;
     VkImageView                     pvkDepthSRV;
 	uint32_t                        maxConstantBuffers;
 	VkFormat                        depthStencilFormat;

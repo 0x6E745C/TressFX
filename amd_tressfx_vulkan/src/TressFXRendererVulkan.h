@@ -122,20 +122,20 @@ class TressFXRenderer
     VkResult CreateFrameBuffer(VkDevice pvkDevice, VkImageView depthTextureView,
                                VkImageView colorTextureView, uint32_t width,
                                uint32_t height);
-    VkResult CreateTextureAndViews(VkDevice pvkDevice, uint32_t MemoryIndexGPU,
+    VkResult CreateTextureAndViews(VkDevice pvkDevice, VkPhysicalDeviceMemoryProperties memProperties,
                                    VkCommandBuffer commandBuffer,
                                    VkDeviceMemory scratchMemory, VkBuffer scratchBuffer,
                                    size_t &offsetInScratchBuffer);
     VkResult CreateConstantBuffer(VkDevice pvkDevice, uint32_t maxUniformBuffer,
-                                  uint32_t MemoryIndexCPU);
-    VkResult CreateVertexBuffers(VkDevice pvkDevice, uint32_t MemoryIndexGPU,
+                                  VkPhysicalDeviceMemoryProperties memProperties);
+    VkResult CreateVertexBuffers(VkDevice pvkDevice, VkPhysicalDeviceMemoryProperties memProperties,
                                  VkCommandBuffer commandBuffer,
                                  VkDeviceMemory scratchMemory, VkBuffer scratchBuffer,
                                  size_t &offsetInScratchBuffer);
     VkResult CreateSamplers(VkDevice pvkDevice);
     VkResult CreateRenderStateObjects(VkDevice pvkDevice);
     VkResult CreatePPLL(VkDevice pvkDevice, int winWidth, int winHeight, bool resize,
-                        uint32_t MemoryIndexGPU);
+		VkPhysicalDeviceMemoryProperties memProperties);
     VkResult CreateLayouts(VkDevice pvkDevice);
     VkResult AllocateAndPopulateSets(VkDevice pvkDevice, bool isShortcut);
     void DeletePPLL(VkDevice pvkDevice);
@@ -148,12 +148,12 @@ class TressFXRenderer
     VkImageView GetShadowMapSRV() { return m_pSMHairView; };
     VkResult OnCreateDevice(VkDevice pvkDevice, int winWidth, int winHeight,
                             bool bShortCutOn, uint32_t maxUniformBuffer,
-                            uint32_t MemoryIndexCPU, uint32_t MemoryIndexGPU,
+                            VkPhysicalDeviceMemoryProperties memProperties,
                             VkImageView depthTexture, VkImageView colorTexture,
                             VkCommandBuffer commandBuffer, VkDeviceMemory scratchMemory,
                             VkBuffer scratchBuffer, size_t &offsetInScratchBuffer);
     VkResult OnResizedSwapChain(VkDevice pvkDevice, int winWidth, int WinHeight,
-                                bool bShortCutOn, uint32_t MemoryIndexGPU);
+                                bool bShortCutOn, VkPhysicalDeviceMemoryProperties memProperties);
     void BeginHairFrame(VkDevice pvkDevice, DirectX::XMVECTOR eyePoint,
                         DirectX::XMVECTOR lightPosition,
                         DirectX::XMMATRIX *pModelTrasnsformForHead,

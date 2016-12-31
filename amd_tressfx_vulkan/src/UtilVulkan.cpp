@@ -17,15 +17,34 @@ ShaderModule::~ShaderModule()
     vkDestroyShaderModule(m_pvkDevice, m_shaderModule, nullptr);
 }
 
+
+uint32_t getMemoryTypeIndex(uint32_t typeBits, const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties)
+{
+	// Iterate over all memory types available for the device used in this example
+	for (uint32_t i = 0; i < memprops.memoryTypeCount; i++)
+	{
+		if ((typeBits & 1) == 1)
+		{
+			if ((memprops.memoryTypes[i].propertyFlags & properties) == properties)
+			{
+				return i;
+			}
+		}
+		typeBits >>= 1;
+	}
+	throw "Could not find a suitable memory type!";
+}
+
+
 VkDeviceMemory allocBufferMemory(VkDevice dev, VkBuffer buffer,
-                                 uint32_t texture_memory_index)
+                                 const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties)
 {
     VkMemoryRequirements memReqs;
     vkGetBufferMemoryRequirements(dev, buffer, &memReqs);
 
     VkMemoryAllocateInfo allocateInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
     allocateInfo.allocationSize = memReqs.size;
-    allocateInfo.memoryTypeIndex = texture_memory_index;
+    allocateInfo.memoryTypeIndex = getMemoryTypeIndex(memReqs.memoryTypeBits, memprops, properties);
     VkDeviceMemory result;
     vkAllocateMemory(dev, &allocateInfo, nullptr, &result);
     vkBindBufferMemory(dev, buffer, result, 0);
@@ -33,14 +52,14 @@ VkDeviceMemory allocBufferMemory(VkDevice dev, VkBuffer buffer,
 }
 
 VkDeviceMemory allocImageMemory(VkDevice dev, VkImage image,
-                                uint32_t texture_memory_index)
+                                const VkPhysicalDeviceMemoryProperties &memprops)
 {
     VkMemoryRequirements memReqs;
     vkGetImageMemoryRequirements(dev, image, &memReqs);
 
     VkMemoryAllocateInfo allocateInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
     allocateInfo.allocationSize = memReqs.size;
-    allocateInfo.memoryTypeIndex = texture_memory_index;
+    allocateInfo.memoryTypeIndex = getMemoryTypeIndex(memReqs.memoryTypeBits, memprops, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
     VkDeviceMemory result;
     vkAllocateMemory(dev, &allocateInfo, nullptr, &result);
     vkBindImageMemory(dev, image, result, 0);

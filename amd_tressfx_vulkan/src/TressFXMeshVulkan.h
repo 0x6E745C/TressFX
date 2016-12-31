@@ -39,7 +39,7 @@ class TressFXMesh
     VkDevice m_pvkDevice;
     // private member function
     VkResult CreateBufferAndViews(VkDevice pvkDevice, TressFX_SceneMesh *sceneMesh,
-                                  uint32_t texture_buffer_memory_index,
+                                  VkPhysicalDeviceMemoryProperties memProperties,
                                   VkCommandBuffer upload_cmd_buffer,
                                   VkBuffer scratchBuffer, VkDeviceMemory scratchMemory,
                                   size_t &offsetInUploadBuffer);
@@ -151,7 +151,7 @@ class TressFXMesh
 
     VkResult OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
                       TressFX_SceneMesh *sceneMesh, VkImageView pTexture,
-                      uint32_t MemoryIndexGPU, VkCommandBuffer upload_cmd_buffer,
+                      VkPhysicalDeviceMemoryProperties memProperties, VkCommandBuffer upload_cmd_buffer,
                       VkBuffer scratchBuffer, VkDeviceMemory scratchMemory,
                       VkDescriptorSetLayout GlobalConstraintsSetLayout,
                       VkDescriptorSetLayout LocalConstraintsSetLayout,

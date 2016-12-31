@@ -81,7 +81,7 @@ TressFX_Initialize(TressFX_Desc &desc, VkImageView depthTexture, VkImageView col
     desc.pOpaque = &gTressFXOpaqueDesc;
     desc.pOpaque->Initialize(desc, depthTexture, colorTexture, commandBuffer,
                              scratchMemory, scratchBuffer, offsetInScratchBuffer,
-                             desc.memoryIndexHostVisible, desc.memoryIndexDeviceLocal);
+                             desc.memoryProperties);
 
     desc.pTressFXMesh = NULL;
     desc.groupID = 0;
@@ -136,7 +136,7 @@ TRESSFX_RETURN_CODE AMD_TRESSFX_DLL_API TressFX_LoadProcessedAsset(
     memcpy(desc.tressFXHair.pHair, pHairBlob->pHair, pHairBlob->size);
     desc.tressFXHair.size = pHairBlob->size;
     pTressFXMesh->OnCreate(desc.pvkDevice, &desc.tressFXHair, sceneMesh, pTressFXTexture,
-                           desc.memoryIndexDeviceLocal, uploadCmdBuffer, scratchBuffer,
+                           desc.memoryProperties, uploadCmdBuffer, scratchBuffer,
                            scratchMemory,
                            desc.pOpaque->tressFXSimulation.m_GlobalConstraintsSetLayout,
                            desc.pOpaque->tressFXSimulation.m_LocalConstraintsSetLayout,
@@ -169,7 +169,7 @@ TRESSFX_RETURN_CODE AMD_TRESSFX_DLL_API TressFX_CreateProcessedAsset(
     VkDeviceMemory scratchMemory)
 {
     bool success = desc.pOpaque->CreateProcessedAsset(
-        desc, ppHairBlob, sceneMesh, hairTexture, desc.memoryIndexDeviceLocal,
+        desc, ppHairBlob, sceneMesh, hairTexture, desc.memoryProperties,
         uploadCmdBuffer, scratchBuffer, scratchMemory);
     desc.groupID = 0;
     return (success ? TRESSFX_RETURN_CODE_SUCCESS : TRESSFX_RETURN_CODE_FAIL);

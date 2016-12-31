@@ -309,8 +309,7 @@ VkResult TressFXSimulation::CreateDescriptorSet(VkDevice pvkDevice)
 VkResult TressFXSimulation::OnCreateDevice(VkDevice pvkDevice,
                                            TressFX_CollisionCapsule *pCollision,
                                            uint32_t maxUniformCount,
-                                           uint32_t cpu_memory_index,
-                                           uint32_t gpu_memory_index)
+                                           VkPhysicalDeviceMemoryProperties memProperties)
 {
     VkResult vr;
     AMD_V_RETURN(CreateDescriptorSet(pvkDevice));
@@ -374,7 +373,7 @@ VkResult TressFXSimulation::OnCreateDevice(VkDevice pvkDevice,
     // Create constant buffers
     //-------------------------
     AMD_V_RETURN(CreateComputeShaderConstantBuffers(
-        pvkDevice, pCollision, maxUniformCount, cpu_memory_index, gpu_memory_index));
+        pvkDevice, pCollision, maxUniformCount, memProperties));
 
     return VK_SUCCESS;
 }
@@ -1055,8 +1054,7 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
 //--------------------------------------------------------------------------------------
 VkResult TressFXSimulation::CreateComputeShaderConstantBuffers(
     VkDevice pvkDevice, TressFX_CollisionCapsule *pCollision,
-    uint32_t maxUniformBufferCount, uint32_t cpu_memory_index,
-    uint32_t texture_memory_index)
+    uint32_t maxUniformBufferCount, VkPhysicalDeviceMemoryProperties memProperties)
 {
     (void)pCollision;
     VkResult vr = VK_SUCCESS;
@@ -1067,14 +1065,14 @@ VkResult TressFXSimulation::CreateComputeShaderConstantBuffers(
     Desc.size = maxUniformBufferCount * sizeof(ConstBufferCS_Per_Frame);
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBCSPerFrame));
     m_pCBCSPerFrameMemory =
-        allocBufferMemory(pvkDevice, m_pCBCSPerFrame, cpu_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBCSPerFrame, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // const buffer for capsule collision
     Desc.size = sizeof(TressFX_CollisionCapsule);
     // data.pSysMem = (void *)pCollision;
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBCSCollisionCapsule));
     m_pCBCSCollisionCapsuleMemory =
-        allocBufferMemory(pvkDevice, m_pCBCSCollisionCapsule, texture_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBCSCollisionCapsule, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     /*    void* scratch_buffer_mapped_memory;
         vkMapMemory(pvkDevice, ..., 0, sizeof(TressFX_CollisionCapsule), 0,
@@ -1088,13 +1086,13 @@ VkResult TressFXSimulation::CreateComputeShaderConstantBuffers(
     Desc.size = sizeof(TransformConstantBuffer);
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBGenerateTransforms));
     m_pCBGenerateTransformsMemory =
-        allocBufferMemory(pvkDevice, m_pCBGenerateTransforms, cpu_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBGenerateTransforms, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     // const buffer for head transformation
     Desc.size = sizeof(ConstBufferCS_HeadTransform);
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &Desc, nullptr, &m_pCBHeadTransforms));
     m_pCBHeadTransformsMemory =
-        allocBufferMemory(pvkDevice, m_pCBHeadTransforms, cpu_memory_index);
+        allocBufferMemory(pvkDevice, m_pCBHeadTransforms, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
     VkDescriptorBufferInfo perFrameCBCS{m_pCBCSPerFrame, 0,
                                         sizeof(ConstBufferCS_Per_Frame)};

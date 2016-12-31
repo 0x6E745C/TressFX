@@ -34,7 +34,7 @@ namespace AMD
 {
 struct GPUOnlyStructuredBuffer
 {
-    GPUOnlyStructuredBuffer() : m_pBuffer(nullptr), m_pvkDevice(nullptr) {}
+    GPUOnlyStructuredBuffer() : m_pBuffer(VK_NULL_HANDLE), m_pvkDevice(nullptr) {}
     VkResult Create(VkDevice pd3dDevice, uint32_t structCount, uint32_t structSize);
     void Destroy();
 
@@ -105,11 +105,11 @@ class TressFXShortCut
 
   public:
     TressFXShortCut(void)
-        : m_pFragmentColorsTexture(nullptr), m_pFragmentColorsMemory(nullptr),
-          m_pFragmentColorsView(nullptr), m_pFragmentDepthsTexture(nullptr),
-          m_pFragmentDepthsMemory(nullptr), m_pFragmentDepthsView(nullptr),
-          m_pAccumInvAlphaTexture(nullptr), m_pAccumInvAlphaMemory(nullptr),
-          m_pAccumInvAlphaView(nullptr)
+        : m_pFragmentColorsTexture(VK_NULL_HANDLE), m_pFragmentColorsMemory(VK_NULL_HANDLE),
+          m_pFragmentColorsView(VK_NULL_HANDLE), m_pFragmentDepthsTexture(VK_NULL_HANDLE),
+          m_pFragmentDepthsMemory(VK_NULL_HANDLE), m_pFragmentDepthsView(VK_NULL_HANDLE),
+          m_pAccumInvAlphaTexture(VK_NULL_HANDLE), m_pAccumInvAlphaMemory(VK_NULL_HANDLE),
+          m_pAccumInvAlphaView(VK_NULL_HANDLE)
     {
     }
     ~TressFXShortCut(void){};

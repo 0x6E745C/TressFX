@@ -129,7 +129,7 @@ struct PPLL_BUFFERS
     int refCount; // reference count - delete buffers when 0
 };
 
-PPLL_BUFFERS g_PPLBuffers = {nullptr, nullptr, nullptr, 0, 0, 0};
+PPLL_BUFFERS g_PPLBuffers = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, 0, 0, 0};
 
 const static UINT g_HairTotalLayers = 32;
 
@@ -231,7 +231,7 @@ namespace AMD
 //
 //--------------------------------------------------------------------------------------
 VkResult TressFXRenderer::CreateTextureAndViews(
-    VkDevice pvkDevice, uint32_t texture_memory_index, VkCommandBuffer commandBuffer,
+    VkDevice pvkDevice, VkPhysicalDeviceMemoryProperties memProperties, VkCommandBuffer commandBuffer,
     VkDeviceMemory scratchMemory, VkBuffer scratchBuffer, size_t &offsetInScratchBuffer)
 {
     VkResult vr;
@@ -358,7 +358,7 @@ VkResult TressFXRenderer::CreateTextureAndViews(
 //
 //--------------------------------------------------------------------------------------
 VkResult TressFXRenderer::CreateVertexBuffers(
-    VkDevice pvkDevice, uint32_t texture_memory_index, VkCommandBuffer commandBuffer,
+    VkDevice pvkDevice, VkPhysicalDeviceMemoryProperties memProperties, VkCommandBuffer commandBuffer,
     VkDeviceMemory scratchMemory, VkBuffer scratchBuffer, size_t &offsetInScratchBuffer)
 {
     VkResult vr;
@@ -413,14 +413,14 @@ VkResult TressFXRenderer::CreateVertexBuffers(
 //--------------------------------------------------------------------------------------
 VkResult TressFXRenderer::CreateConstantBuffer(VkDevice pvkDevice,
                                                uint32_t maxUniformBuffer,
-                                               uint32_t cpu_memory_index)
+                                               VkPhysicalDeviceMemoryProperties memProperties)
 {
     VkResult vr;
     VkBufferCreateInfo cbDesc{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
     cbDesc.usage = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
     cbDesc.size = maxUniformBuffer * sizeof(CB_PER_FRAME);
     AMD_V_RETURN(vkCreateBuffer(pvkDevice, &cbDesc, nullptr, &m_pcbPerFrame));
-    m_pcbPerFrameMemory = allocBufferMemory(pvkDevice, m_pcbPerFrame, cpu_memory_index);
+    m_pcbPerFrameMemory = allocBufferMemory(pvkDevice, m_pcbPerFrame, memProperties);
 
     return VK_SUCCESS;
 }
@@ -638,18 +638,18 @@ VkResult TressFXRenderer::CreateRenderStateObjects(VkDevice pvkDevice)
 //--------------------------------------------------------------------------------------
 VkResult TressFXRenderer::OnCreateDevice(
     VkDevice pvkDevice, int winWidth, int winHeight, bool bShortCutOn,
-    uint32_t maxUniformBuffer, uint32_t cpu_memory_index, uint32_t texture_memory_index,
+    uint32_t maxUniformBuffer, VkPhysicalDeviceMemoryProperties memProperties,
     VkImageView depthTexture, VkImageView colorTexture, VkCommandBuffer commandBuffer,
     VkDeviceMemory scratchMemory, VkBuffer scratchBuffer, size_t &offsetInScratchBuffer)
 {
     m_pvkDevice = pvkDevice;
     VkResult vr;
 
-    AMD_V_RETURN(CreateTextureAndViews(pvkDevice, texture_memory_index, commandBuffer,
+    AMD_V_RETURN(CreateTextureAndViews(pvkDevice, memProperties, commandBuffer,
                                        scratchMemory, scratchBuffer,
                                        offsetInScratchBuffer));
-    AMD_V_RETURN(CreateConstantBuffer(pvkDevice, maxUniformBuffer, cpu_memory_index));
-    AMD_V_RETURN(CreateVertexBuffers(pvkDevice, texture_memory_index, commandBuffer,
+    AMD_V_RETURN(CreateConstantBuffer(pvkDevice, maxUniformBuffer, memProperties));
+    AMD_V_RETURN(CreateVertexBuffers(pvkDevice, memProperties, commandBuffer,
                                      scratchMemory, scratchBuffer,
                                      offsetInScratchBuffer));
     AMD_V_RETURN(CreateSamplers(pvkDevice));
@@ -657,7 +657,7 @@ VkResult TressFXRenderer::OnCreateDevice(
     if (!bShortCutOn)
     {
         AMD_V_RETURN(
-            CreatePPLL(pvkDevice, winWidth, winHeight, false, texture_memory_index));
+            CreatePPLL(pvkDevice, winWidth, winHeight, false, memProperties));
         VkImageMemoryBarrier defineHeadPPLLBarrier[] = {getImageMemoryBarrier(
             m_pHeadPPLLTexture, 0, VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
             VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL)};
@@ -672,7 +672,7 @@ VkResult TressFXRenderer::OnCreateDevice(
                                   m_pSamplerStateLinearWrap, m_pSamplerStatePointClamp,
                                   depthTexture, colorTexture, m_pcbPerFrame,
                                   sizeof(CB_PER_FRAME), m_pNoiseView, m_pSMHairView,
-                                  texture_memory_index, winWidth, winHeight);
+                                  memProperties, winWidth, winHeight);
 
         VkImageMemoryBarrier barriers[] = {
             getImageMemoryBarrier(m_ShortCut.m_pAccumInvAlphaTexture, 0,
@@ -960,7 +960,7 @@ VkResult TressFXRenderer::AllocateAndPopulateSets(VkDevice pvkDevice, bool isSho
 //
 //--------------------------------------------------------------------------------------
 VkResult TressFXRenderer::CreatePPLL(VkDevice pvkDevice, int winWidth, int winHeight,
-                                     bool resize, uint32_t texture_memory_index)
+                                     bool resize, VkPhysicalDeviceMemoryProperties memProperties)
 {
     VkResult vr;
 
@@ -983,7 +983,7 @@ VkResult TressFXRenderer::CreatePPLL(VkDevice pvkDevice, int winWidth, int winHe
         AMD_V_RETURN(vkCreateImage(pvkDevice, &headPPLLInfo, nullptr,
                                    &g_PPLBuffers.pHeadPPLL_Buffer));
         g_PPLBuffers.pHeadPPLL_Memory = allocImageMemory(
-            pvkDevice, g_PPLBuffers.pHeadPPLL_Buffer, texture_memory_index);
+            pvkDevice, g_PPLBuffers.pHeadPPLL_Buffer, memProperties);
 
         // View for linked list head
         VkImageViewCreateInfo srDesc{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
@@ -1087,7 +1087,7 @@ void TressFXRenderer::DeletePPLL(VkDevice pvkDevice)
 //--------------------------------------------------------------------------------------
 VkResult TressFXRenderer::OnResizedSwapChain(VkDevice pvkDevice, int width, int height,
                                              bool bShortCutOn,
-                                             uint32_t texture_memory_index)
+                                             VkPhysicalDeviceMemoryProperties memProperties)
 {
     VkResult vr;
     if (bShortCutOn)
@@ -1096,7 +1096,7 @@ VkResult TressFXRenderer::OnResizedSwapChain(VkDevice pvkDevice, int width, int 
     }
     else
     {
-        AMD_V_RETURN(CreatePPLL(pvkDevice, width, height, true, texture_memory_index));
+        AMD_V_RETURN(CreatePPLL(pvkDevice, width, height, true, memProperties));
     }
     return VK_SUCCESS;
 }

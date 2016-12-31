@@ -48,8 +48,7 @@ class TressFXSimulation
     ~TressFXSimulation(void);
 
     VkResult OnCreateDevice(VkDevice pvkDevice, TressFX_CollisionCapsule *pCollision,
-                            uint32_t maxUniformCount, uint32_t cpu_memory_index,
-                            uint32_t gpu_memory_index);
+                            uint32_t maxUniformCount, VkPhysicalDeviceMemoryProperties memProperties);
     VkResult Simulate(VkDevice pvkContext, VkCommandBuffer commandBuffer,
                       float fElapsedTime, float density, tressfx_vec3 &windDir,
                       float windMag, DirectX::XMMATRIX *pModelTransformForHead,
@@ -119,8 +118,7 @@ class TressFXSimulation
     VkResult CreateComputeShaderConstantBuffers(VkDevice pvkDevice,
                                                 TressFX_CollisionCapsule *pCollision,
                                                 uint32_t maxUniformBufferCount,
-                                                uint32_t memoryIndexCPU,
-                                                uint32_t memoryIndexGPU);
+                                                VkPhysicalDeviceMemoryProperties memProps);
     VkResult CreateDescriptorSet(VkDevice pvkDevice);
 
   public:
