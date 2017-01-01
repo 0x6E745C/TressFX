@@ -332,53 +332,6 @@ VkResult TressFXRenderer::CreateTextureAndViews(
 
 //--------------------------------------------------------------------------------------
 //
-// CreateVertexBuffers
-//
-// Creates the vertex buffers for hair rendering
-//
-//--------------------------------------------------------------------------------------
-VkResult TressFXRenderer::CreateVertexBuffers(
-    VkDevice pvkDevice, VkPhysicalDeviceMemoryProperties memProperties, VkCommandBuffer commandBuffer,
-    VkDeviceMemory scratchMemory, VkBuffer scratchBuffer, size_t &offsetInScratchBuffer)
-{
-    VkResult vr;
-    // Create the screen quad vertex buffer(use StandardVertex for simplicity)
-    const StandardVertex screenQuad[6] = {
-        {XMFLOAT3(-1.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
-         XMFLOAT2(0.0f, 1.0f)}, // 0
-        {XMFLOAT3(-1.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
-         XMFLOAT2(0.0f, 0.0f)}, // 1
-        {XMFLOAT3(1.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
-         XMFLOAT2(1.0f, 1.0f)}, // 2
-        {XMFLOAT3(1.0f, -1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
-         XMFLOAT2(1.0f, 1.0f)}, // 2
-        {XMFLOAT3(-1.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
-         XMFLOAT2(0.0f, 0.0f)}, // 1
-        {XMFLOAT3(1.0f, 1.0f, 0.0f), XMFLOAT3(0.0f, 0.0f, 0.0f),
-         XMFLOAT2(1.0f, 0.0f)} // 3
-    };
-
-    VkBufferCreateInfo bd{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bd.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    bd.size = sizeof(StandardVertex) * 6;
-    AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pScreenQuadVB));
-    m_pScreenQuadMemory = allocBufferMemory(pvkDevice, m_pScreenQuadVB, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    void *memoryPointer;
-    vkMapMemory(pvkDevice, scratchMemory, offsetInScratchBuffer,
-                6 * sizeof(StandardVertex), 0, &memoryPointer);
-    memcpy(memoryPointer, screenQuad, 6 * sizeof(StandardVertex));
-
-    VkBufferCopy region{offsetInScratchBuffer, 0, 6 * sizeof(StandardVertex)};
-    vkCmdCopyBuffer(commandBuffer, scratchBuffer, m_pScreenQuadVB, 1, &region);
-    offsetInScratchBuffer += 6 * sizeof(StandardVertex);
-    vkUnmapMemory(pvkDevice, scratchMemory);
-
-    return VK_SUCCESS;
-}
-
-//--------------------------------------------------------------------------------------
-//
 // CreateConstantBuffers
 //
 // Creates the constant buffers for hair rendering
@@ -623,9 +576,6 @@ VkResult TressFXRenderer::OnCreateDevice(
                                        scratchMemory, scratchBuffer,
                                        offsetInScratchBuffer));
     AMD_CHECKED_VULKAN_CALL(CreateConstantBuffer(pvkDevice, maxUniformBuffer, memProperties));
-    AMD_CHECKED_VULKAN_CALL(CreateVertexBuffers(pvkDevice, memProperties, commandBuffer,
-                                     scratchMemory, scratchBuffer,
-                                     offsetInScratchBuffer));
     AMD_CHECKED_VULKAN_CALL(CreateSamplers(pvkDevice));
     AMD_CHECKED_VULKAN_CALL(CreateLayouts(pvkDevice));
     if (!bShortCutOn)
@@ -1216,7 +1166,7 @@ void TressFXRenderer::BeginHairFrame(
 //
 // RenderScreenQuad
 //
-// Renders a full screen quad
+// Renders a triangle big enough to cover whole screen
 //
 ////--------------------------------------------------------------------------------------
 void TressFXRenderer::RenderScreenQuad(VkCommandBuffer cmdbuffer, VkPipeline pPipeline)
@@ -1224,11 +1174,8 @@ void TressFXRenderer::RenderScreenQuad(VkCommandBuffer cmdbuffer, VkPipeline pPi
     // set shader
     vkCmdBindPipeline(cmdbuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, pPipeline);
 
-    VkDeviceSize offsets = 0;
-    vkCmdBindVertexBuffers(cmdbuffer, 0, 1, &m_pScreenQuadVB, &offsets);
-
-    // Draw full screen quad
-    vkCmdDraw(cmdbuffer, 6, 1, 0, 0);
+    // Draw full screen triangle
+    vkCmdDraw(cmdbuffer, 3, 1, 0, 0);
 }
 
 //--------------------------------------------------------------------------------------
@@ -1498,9 +1445,6 @@ void TressFXRenderer::EndHairFrame(VkDevice pvkDevice) {}
 void TressFXRenderer::OnDestroy()
 {
     m_ShortCut.OnDestroy(true);
-
-    AMD_SAFE_RELEASE(m_pScreenQuadVB, vkDestroyBuffer, m_pvkDevice);
-    AMD_SAFE_RELEASE(m_pScreenQuadMemory, vkFreeMemory, m_pvkDevice);
 
     {
         AMD_SAFE_RELEASE(m_pPLRenderHairAAStrandCopies, vkDestroyPipeline, m_pvkDevice);

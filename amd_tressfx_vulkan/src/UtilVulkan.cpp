@@ -290,15 +290,6 @@ const VkPipelineColorBlendAttachmentState m_pSum_BS_render_target_0{
     VK_BLEND_FACTOR_ONE, VK_BLEND_OP_ADD,
     VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT |
         VK_COLOR_COMPONENT_A_BIT};
-
-// Full screen quad layout structure
-const VkVertexInputBindingDescription layout_fullscreen_quad_bindings[1] = {
-    {0, 32, VK_VERTEX_INPUT_RATE_VERTEX}};
-const VkVertexInputAttributeDescription layout_fullscreen_quad[3] = {
-    {0, 0, VK_FORMAT_R32G32B32_SFLOAT, 0},  // POSITION
-    {1, 0, VK_FORMAT_R32G32B32_SFLOAT, 12}, // TANGENT
-    {2, 0, VK_FORMAT_R32G32_SFLOAT, 24},    // TEXCOORD
-};
 }
 
 const VkPipelineDepthStencilStateCreateInfo CommonPipelineState::DepthTestEnabledDesc =
@@ -358,10 +349,10 @@ const VkPipelineVertexInputStateCreateInfo CommonPipelineState::m_pLayoutQuad{
     VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
     nullptr,
     0,
-    1,
-    layout_fullscreen_quad_bindings,
-    3,
-    layout_fullscreen_quad};
+    0,
+    nullptr,
+    0,
+    nullptr};
 
 VkImageMemoryBarrier getImageMemoryBarrier(VkImage image, VkAccessFlags srcMask,
                                            VkAccessFlags dstMask, VkImageLayout oldLayout,

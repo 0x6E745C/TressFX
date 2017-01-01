@@ -97,10 +97,6 @@ class TressFXRenderer
     VkDeviceMemory m_pSMHairMemory;
     VkImageView m_pSMHairView;
 
-    // vertex buffer for full screen quad
-    VkBuffer m_pScreenQuadVB;
-    VkDeviceMemory m_pScreenQuadMemory;
-
     TressFXShortCut m_ShortCut;
 
     VkImageView m_depthBuffer;
@@ -128,10 +124,6 @@ class TressFXRenderer
                                    size_t &offsetInScratchBuffer);
     VkResult CreateConstantBuffer(VkDevice pvkDevice, uint32_t maxUniformBuffer,
                                   VkPhysicalDeviceMemoryProperties memProperties);
-    VkResult CreateVertexBuffers(VkDevice pvkDevice, VkPhysicalDeviceMemoryProperties memProperties,
-                                 VkCommandBuffer commandBuffer,
-                                 VkDeviceMemory scratchMemory, VkBuffer scratchBuffer,
-                                 size_t &offsetInScratchBuffer);
     VkResult CreateSamplers(VkDevice pvkDevice);
     VkResult CreateRenderStateObjects(VkDevice pvkDevice, VkFormat depthStencilFormat, VkFormat colorFormat);
     VkResult CreatePPLL(VkDevice pvkDevice, int winWidth, int winHeight, bool resize,
