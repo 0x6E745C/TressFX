@@ -32,7 +32,7 @@ uint32_t getMemoryTypeIndex(uint32_t typeBits, const VkPhysicalDeviceMemoryPrope
 		}
 		typeBits >>= 1;
 	}
-	throw "Could not find a suitable memory type!";
+	return static_cast<uint32_t>(-1);
 }
 
 VkDeviceSize align(VkDeviceSize offset, VkDeviceSize alignment)

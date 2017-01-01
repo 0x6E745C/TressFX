@@ -116,12 +116,15 @@ struct PPLL_BUFFERS
     VkBuffer pAtomicCounterPLL_Buffer;
     VkDeviceMemory pAtomicCounterPLL_Memory;
 
+    // If possible PLLL head, PPLL and atomic counter use same memory block
+    VkDeviceMemory pSharedMemory;
+
     int width;
     int height;
     int refCount; // reference count - delete buffers when 0
 };
 
-PPLL_BUFFERS g_PPLBuffers = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, 0, 0, 0};
+PPLL_BUFFERS g_PPLBuffers = {VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, VK_NULL_HANDLE, 0, 0, 0};
 
 const static UINT g_HairTotalLayers = 32;
 
@@ -924,22 +927,65 @@ VkResult TressFXRenderer::CreatePPLL(VkDevice pvkDevice, int winWidth, int winHe
     if ((winWidth != g_PPLBuffers.width) || (winHeight != g_PPLBuffers.height) ||
         (g_PPLBuffers.refCount == 0))
     {
-        // Release any previously allocated buffers
-        //        AMD_SAFE_RELEASE(g_PPLBuffers.pHeadPPLL_Buffer);
-        //        AMD_SAFE_RELEASE(g_PPLBuffers.pHeadPPLL_SRV);
-        //        AMD_SAFE_RELEASE(g_PPLBuffers.pHeadPPLL_UAV);
-        //        AMD_SAFE_RELEASE(g_PPLBuffers.pPPLL_Buffer);
-        //        AMD_SAFE_RELEASE(g_PPLBuffers.pPPLL_UAV);
-        //        AMD_SAFE_RELEASE(g_PPLBuffers.pPPLL_SRV);
-
         // linked list head texture
         VkImageCreateInfo headPPLLInfo =
             getImageCreateInfo(VK_FORMAT_R32_UINT, winWidth, winHeight,
-                               VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT);
+                               VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT);
         AMD_CHECKED_VULKAN_CALL(vkCreateImage(pvkDevice, &headPPLLInfo, nullptr,
                                    &g_PPLBuffers.pHeadPPLL_Buffer));
-        g_PPLBuffers.pHeadPPLL_Memory = allocImageMemory(
-            pvkDevice, g_PPLBuffers.pHeadPPLL_Buffer, memProperties);
+
+        // Per-pixel Linked List (PPLL) buffer
+        VkBufferCreateInfo BufferDesc{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
+        BufferDesc.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
+        BufferDesc.size = (DWORD)(g_HairTotalLayers * winWidth * winHeight *
+                                  sizeof(PER_PIXEL_LINKED_LIST_STRUCT));
+        AMD_CHECKED_VULKAN_CALL(
+            vkCreateBuffer(pvkDevice, &BufferDesc, nullptr, &g_PPLBuffers.pPPLL_Buffer));
+
+        // Atomic counter buffer
+        BufferDesc.usage =
+            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        BufferDesc.size = sizeof(unsigned int);
+        AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &BufferDesc, nullptr,
+                                    &g_PPLBuffers.pAtomicCounterPLL_Buffer));
+
+        VkMemoryRequirements headPPLLMemReq;
+        vkGetImageMemoryRequirements(pvkDevice, g_PPLBuffers.pHeadPPLL_Buffer, &headPPLLMemReq);
+        VkMemoryRequirements PPLBufferMemReq;
+        vkGetBufferMemoryRequirements(pvkDevice, g_PPLBuffers.pPPLL_Buffer, &PPLBufferMemReq);
+        VkMemoryRequirements atomicBufferMemReq;
+        vkGetBufferMemoryRequirements(pvkDevice, g_PPLBuffers.pAtomicCounterPLL_Buffer, &atomicBufferMemReq);
+
+        uint32_t typeBits = headPPLLMemReq.memoryTypeBits & PPLBufferMemReq.memoryTypeBits & atomicBufferMemReq.memoryTypeBits;
+		uint32_t memoryType = getMemoryTypeIndex(typeBits, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        if (memoryType == -1)
+        {
+			// Split in 3
+            g_PPLBuffers.pHeadPPLL_Memory = allocImageMemory(
+                pvkDevice, g_PPLBuffers.pHeadPPLL_Buffer, memProperties);
+
+            g_PPLBuffers.pPPLL_Memory =
+                allocBufferMemory(pvkDevice, g_PPLBuffers.pPPLL_Buffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+            g_PPLBuffers.pAtomicCounterPLL_Memory = allocBufferMemory(
+                pvkDevice, g_PPLBuffers.pAtomicCounterPLL_Buffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+        }
+        else
+        {
+			VkDeviceSize PPLBufferOffset = align(headPPLLMemReq.size, PPLBufferMemReq.alignment);
+			VkDeviceSize atomicBufferOffset = align(PPLBufferOffset + PPLBufferMemReq.size, atomicBufferMemReq.alignment);
+			VkDeviceSize totalSize = atomicBufferOffset + atomicBufferMemReq.size;
+
+			VkMemoryAllocateInfo allocate{ VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO };
+			allocate.allocationSize = totalSize;
+			allocate.memoryTypeIndex = memoryType;
+			AMD_CHECKED_VULKAN_CALL(vkAllocateMemory(pvkDevice, &allocate, NULL, &g_PPLBuffers.pSharedMemory));
+
+			AMD_CHECKED_VULKAN_CALL(vkBindImageMemory(pvkDevice, g_PPLBuffers.pHeadPPLL_Buffer, g_PPLBuffers.pSharedMemory, 0));
+			AMD_CHECKED_VULKAN_CALL(vkBindBufferMemory(pvkDevice, g_PPLBuffers.pPPLL_Buffer, g_PPLBuffers.pSharedMemory, PPLBufferOffset));
+			AMD_CHECKED_VULKAN_CALL(vkBindBufferMemory(pvkDevice, g_PPLBuffers.pAtomicCounterPLL_Buffer, g_PPLBuffers.pSharedMemory, atomicBufferOffset));
+		}
+
 
         // View for linked list head
         VkImageViewCreateInfo srDesc{VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO};
@@ -952,24 +998,7 @@ VkResult TressFXRenderer::CreatePPLL(VkDevice pvkDevice, int winWidth, int winHe
         AMD_CHECKED_VULKAN_CALL(
             vkCreateImageView(pvkDevice, &srDesc, nullptr, &g_PPLBuffers.pHeadPPLL_View));
 
-        // Per-pixel Linked List (PPLL) buffer
-        VkBufferCreateInfo BufferDesc{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-        BufferDesc.usage = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-        BufferDesc.size = (DWORD)(g_HairTotalLayers * winWidth * winHeight *
-                                  sizeof(PER_PIXEL_LINKED_LIST_STRUCT));
-        AMD_CHECKED_VULKAN_CALL(
-            vkCreateBuffer(pvkDevice, &BufferDesc, nullptr, &g_PPLBuffers.pPPLL_Buffer));
-        g_PPLBuffers.pPPLL_Memory =
-            allocBufferMemory(pvkDevice, g_PPLBuffers.pPPLL_Buffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-        // Atomic counter buffer
-        BufferDesc.usage =
-            VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-        BufferDesc.size = sizeof(unsigned int);
-        AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &BufferDesc, nullptr,
-                                    &g_PPLBuffers.pAtomicCounterPLL_Buffer));
-        g_PPLBuffers.pAtomicCounterPLL_Memory = allocBufferMemory(
-            pvkDevice, g_PPLBuffers.pAtomicCounterPLL_Buffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
         // update the width and height
         g_PPLBuffers.width = winWidth;
@@ -1027,6 +1056,7 @@ void TressFXRenderer::DeletePPLL(VkDevice pvkDevice)
         AMD_SAFE_RELEASE(g_PPLBuffers.pAtomicCounterPLL_Buffer, vkDestroyBuffer,
                          pvkDevice);
         AMD_SAFE_RELEASE(g_PPLBuffers.pAtomicCounterPLL_Memory, vkFreeMemory, pvkDevice);
+		AMD_SAFE_RELEASE(g_PPLBuffers.pSharedMemory, vkFreeMemory, pvkDevice);
 
         g_PPLBuffers.width = 0;
         g_PPLBuffers.height = 0;
