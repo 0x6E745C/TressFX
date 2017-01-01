@@ -133,18 +133,13 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
                                VkDescriptorSetLayout ShadowSetLayout)
 {
     VkResult vr;
+    size_t offsetInUploadBuffer = 0;
 
     // load the binary file
     if (!Deserialize(pHairBlob))
     {
         return VK_ERROR_INITIALIZATION_FAILED;
     }
-
-    size_t sizeToUpload = m_HairAsset.m_NumTotalHairVertices * sizeof(float);
-
-    void *uploadBuffer;
-    size_t offsetInUploadBuffer = 0;
-    vkMapMemory(pvkDevice, scratchMemory, 0, sizeToUpload, 0, &uploadBuffer);
 
     // Create Buffers
     {
@@ -196,6 +191,9 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
         vkBindBufferMemory(pvkDevice, m_pTriangleIndexBuffer, m_pThicknessIndexTriangleIndexMemory, triangleIndexBufferOffset);
 
         // Fill them
+        void *uploadBuffer;
+        vkMapMemory(pvkDevice, scratchMemory, 0, totalSize, 0, &uploadBuffer);
+
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pThicknessCoeffs, m_pThicknessCoeffsBuffer,
                         offsetInUploadBuffer, sizeof(float) * m_HairAsset.m_NumTotalHairVertices);
@@ -207,6 +205,7 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         &m_HairAsset.m_TriangleIndices[0], m_pTriangleIndexBuffer,
                         offsetInUploadBuffer, sizeof(unsigned int) * m_TotalTriangleIndexCount);
+        vkUnmapMemory(pvkDevice, scratchMemory);
     }
 
     // thickness coeff buffer srv
@@ -219,9 +218,6 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
         AMD_CHECKED_VULKAN_CALL(
             vkCreateBufferView(pvkDevice, &SRVDesc, nullptr, &m_pThicknessCoeffsView));
     }
-
-
-    vkUnmapMemory(pvkDevice, scratchMemory);
 
     m_pHairTextureSRV = pTexture;
 
