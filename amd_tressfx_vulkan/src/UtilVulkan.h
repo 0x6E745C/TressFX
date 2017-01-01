@@ -30,6 +30,8 @@ struct ShaderModule
     ShaderModule& operator=(const ShaderModule&) {};
 };
 
+uint32_t getMemoryTypeIndex(uint32_t typeBits, const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties);
+VkDeviceSize align(VkDeviceSize offset, VkDeviceSize alignment);
 VkDeviceMemory allocBufferMemory(VkDevice dev, VkBuffer buffer,
                                  const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties);
 VkDeviceMemory allocImageMemory(VkDevice dev, VkImage image,

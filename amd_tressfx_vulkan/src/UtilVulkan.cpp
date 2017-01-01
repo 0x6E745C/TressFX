@@ -35,6 +35,11 @@ uint32_t getMemoryTypeIndex(uint32_t typeBits, const VkPhysicalDeviceMemoryPrope
 	throw "Could not find a suitable memory type!";
 }
 
+VkDeviceSize align(VkDeviceSize offset, VkDeviceSize alignment)
+{
+	return ((offset + alignment - 1) / alignment) * alignment;
+}
+
 
 VkDeviceMemory allocBufferMemory(VkDevice dev, VkBuffer buffer,
                                  const VkPhysicalDeviceMemoryProperties &memprops, VkMemoryPropertyFlags properties)

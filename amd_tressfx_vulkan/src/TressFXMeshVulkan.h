@@ -58,11 +58,10 @@ class TressFXMesh
 
   public:
     VkBuffer m_pIndexBuffer;
-    VkDeviceMemory m_pIndexMemory;
     VkBuffer m_pTriangleIndexBuffer;
-    VkDeviceMemory m_pTriangleIndexMemory;
     VkBuffer m_pThicknessCoeffsBuffer;
-    VkDeviceMemory m_pThicknessCoeffsMemory;
+    // Store thickness, index and triangle index buffer
+    VkDeviceMemory m_pThicknessIndexTriangleIndexMemory;
     VkBufferView m_pThicknessCoeffsView;
     int m_TotalIndexCount;
     int m_TotalTriangleIndexCount;

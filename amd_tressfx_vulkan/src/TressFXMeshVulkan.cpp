@@ -46,8 +46,8 @@ namespace AMD
 // Used for initializing member variables to default values.
 //--------------------------------------------------------------------------------------
 TressFXMesh::TressFXMesh(void)
-    : m_pIndexBuffer(NULL), m_pTriangleIndexBuffer(NULL), m_pThicknessCoeffsBuffer(NULL),
-      m_pTriangleIndexMemory(NULL), m_pThicknessCoeffsView(NULL)
+    : m_pIndexBuffer(NULL), m_pTriangleIndexBuffer(NULL), m_pThicknessCoeffsBuffer(NULL), m_pThicknessIndexTriangleIndexMemory(NULL),
+      m_pThicknessCoeffsView(NULL)
 {
     m_HairVertexPositionsBuffer = NULL;
     m_HairVertexPositionsView = NULL;
@@ -146,20 +146,67 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
     size_t offsetInUploadBuffer = 0;
     vkMapMemory(pvkDevice, scratchMemory, 0, sizeToUpload, 0, &uploadBuffer);
 
-    // thickness coeff buffer
+    // Create Buffers
     {
+        // thickness coeff buffer
         VkBufferCreateInfo bd{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
         bd.usage =
             VK_BUFFER_USAGE_UNIFORM_TEXEL_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         bd.size = sizeof(float) * m_HairAsset.m_NumTotalHairVertices;
-
         AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pThicknessCoeffsBuffer));
-        m_pThicknessCoeffsMemory = allocBufferMemory(pvkDevice, m_pThicknessCoeffsBuffer,
-                                                     memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
+        //-----------------------------------
+        // Index buffer (lines and triangles)
+        //-----------------------------------
+
+        // Line index buffer
+        m_TotalIndexCount = (int)m_HairAsset.m_LineIndices.size();
+        bd.size = (UINT)(sizeof(unsigned int) * m_TotalIndexCount);
+        bd.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+        AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pIndexBuffer));
+
+        // Triangle index buffer
+        m_TotalTriangleIndexCount = (int)m_HairAsset.m_TriangleIndices.size();
+        bd.size = (UINT)(sizeof(unsigned int) * m_TotalTriangleIndexCount);
+        AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pTriangleIndexBuffer));
+
+        VkMemoryRequirements thicknessBufferMemReq;
+        vkGetBufferMemoryRequirements(pvkDevice, m_pThicknessCoeffsBuffer, &thicknessBufferMemReq);
+        VkMemoryRequirements indexBufferMemReq;
+        vkGetBufferMemoryRequirements(pvkDevice, m_pIndexBuffer, &indexBufferMemReq);
+        VkMemoryRequirements triangleIndexBufferMemReq;
+        vkGetBufferMemoryRequirements(pvkDevice, m_pTriangleIndexBuffer, &triangleIndexBufferMemReq);
+
+        uint32_t memoryType = getMemoryTypeIndex(indexBufferMemReq.memoryTypeBits & triangleIndexBufferMemReq.memoryTypeBits & thicknessBufferMemReq.memoryTypeBits,
+            memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+        if (memoryType == -1) return VK_ERROR_INITIALIZATION_FAILED;
+
+        VkDeviceSize indexBufferOffset = align(thicknessBufferMemReq.size, indexBufferMemReq.alignment);
+        VkDeviceSize triangleIndexBufferOffset = align(indexBufferOffset + indexBufferMemReq.size, triangleIndexBufferMemReq.alignment);
+        VkDeviceSize totalSize = triangleIndexBufferOffset + triangleIndexBufferMemReq.size;
+
+        VkMemoryAllocateInfo allocateInfo{VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO};
+        allocateInfo.allocationSize = totalSize;
+        allocateInfo.memoryTypeIndex = memoryType;
+        vkAllocateMemory(pvkDevice, &allocateInfo, nullptr, &m_pThicknessIndexTriangleIndexMemory);
+
+        vkBindBufferMemory(pvkDevice, m_pThicknessCoeffsBuffer, m_pThicknessIndexTriangleIndexMemory, 0);
+        vkBindBufferMemory(pvkDevice, m_pIndexBuffer, m_pThicknessIndexTriangleIndexMemory, indexBufferOffset);
+        vkBindBufferMemory(pvkDevice, m_pTriangleIndexBuffer, m_pThicknessIndexTriangleIndexMemory, triangleIndexBufferOffset);
+
+        // Fill them
         fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
                         m_HairAsset.m_pThicknessCoeffs, m_pThicknessCoeffsBuffer,
-                        offsetInUploadBuffer, bd.size);
+                        offsetInUploadBuffer, sizeof(float) * m_HairAsset.m_NumTotalHairVertices);
+
+        fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
+                        &m_HairAsset.m_LineIndices[0], m_pIndexBuffer, offsetInUploadBuffer,
+                        sizeof(unsigned int) * m_TotalIndexCount);
+
+        fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
+                        &m_HairAsset.m_TriangleIndices[0], m_pTriangleIndexBuffer,
+                        offsetInUploadBuffer, sizeof(unsigned int) * m_TotalTriangleIndexCount);
     }
 
     // thickness coeff buffer srv
@@ -173,36 +220,6 @@ VkResult TressFXMesh::OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
             vkCreateBufferView(pvkDevice, &SRVDesc, nullptr, &m_pThicknessCoeffsView));
     }
 
-    //-----------------------------------
-    // Index buffer (lines and triangles)
-    //-----------------------------------
-
-    // Line index buffer
-    m_TotalIndexCount = (int)m_HairAsset.m_LineIndices.size();
-
-    VkBufferCreateInfo bd{VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO};
-    bd.size = (UINT)(sizeof(unsigned int) * m_HairAsset.m_LineIndices.size());
-    bd.usage = VK_BUFFER_USAGE_INDEX_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-
-    AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pIndexBuffer));
-    m_pIndexMemory =
-        allocBufferMemory(pvkDevice, m_pIndexBuffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
-                    &m_HairAsset.m_LineIndices[0], m_pIndexBuffer, offsetInUploadBuffer,
-                    bd.size);
-
-    // Triangle index buffer
-    m_TotalTriangleIndexCount = (int)m_HairAsset.m_TriangleIndices.size();
-    bd.size = (UINT)(sizeof(unsigned int) * m_HairAsset.m_TriangleIndices.size());
-
-    AMD_CHECKED_VULKAN_CALL(vkCreateBuffer(pvkDevice, &bd, nullptr, &m_pTriangleIndexBuffer));
-    m_pTriangleIndexMemory =
-        allocBufferMemory(pvkDevice, m_pTriangleIndexBuffer, memProperties, VkMemoryPropertyFlagBits::VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-    fillInitialData(upload_cmd_buffer, scratchBuffer, uploadBuffer,
-                    &m_HairAsset.m_TriangleIndices[0], m_pTriangleIndexBuffer,
-                    offsetInUploadBuffer, bd.size);
 
     vkUnmapMemory(pvkDevice, scratchMemory);
 
@@ -808,14 +825,12 @@ VkResult TressFXMesh::AllocateDescriptorsSets(
 void TressFXMesh::OnDestroy()
 {
     AMD_SAFE_RELEASE(m_pTriangleIndexBuffer, vkDestroyBuffer, m_pvkDevice);
-    AMD_SAFE_RELEASE(m_pTriangleIndexMemory, vkFreeMemory, m_pvkDevice);
 
     AMD_SAFE_RELEASE(m_pIndexBuffer, vkDestroyBuffer, m_pvkDevice);
-    AMD_SAFE_RELEASE(m_pIndexMemory, vkFreeMemory, m_pvkDevice);
 
     AMD_SAFE_RELEASE(m_pThicknessCoeffsView, vkDestroyBufferView, m_pvkDevice);
     AMD_SAFE_RELEASE(m_pThicknessCoeffsBuffer, vkDestroyBuffer, m_pvkDevice);
-    AMD_SAFE_RELEASE(m_pThicknessCoeffsMemory, vkFreeMemory, m_pvkDevice);
+    AMD_SAFE_RELEASE(m_pThicknessIndexTriangleIndexMemory, vkFreeMemory, m_pvkDevice);
 
     // compute shader variables
     AMD_SAFE_RELEASE(m_HairVertexPositionsView, vkDestroyBufferView, m_pvkDevice);
