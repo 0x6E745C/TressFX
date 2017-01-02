@@ -17,6 +17,55 @@
 
 namespace AMD
 {
+struct DebugMarkerPointer
+{
+	PFN_vkDebugMarkerSetObjectTagEXT pfnDebugMarkerSetObjectTag;
+	PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectName;
+	PFN_vkCmdDebugMarkerBeginEXT pfnCmdDebugMarkerBegin;
+	PFN_vkCmdDebugMarkerEndEXT pfnCmdDebugMarkerEnd;
+	PFN_vkCmdDebugMarkerInsertEXT pfnCmdDebugMarkerInsert;
+
+	VkDevice dev;
+
+	DebugMarkerPointer(VkDevice device) : dev(device)
+	{
+		pfnDebugMarkerSetObjectTag = (PFN_vkDebugMarkerSetObjectTagEXT)vkGetDeviceProcAddr(device, "vkDebugMarkerSetObjectTagEXT");
+		pfnDebugMarkerSetObjectName = (PFN_vkDebugMarkerSetObjectNameEXT)vkGetDeviceProcAddr(device, "vkDebugMarkerSetObjectNameEXT");
+		pfnCmdDebugMarkerBegin = (PFN_vkCmdDebugMarkerBeginEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerBeginEXT");
+		pfnCmdDebugMarkerEnd = (PFN_vkCmdDebugMarkerEndEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerEndEXT");
+		pfnCmdDebugMarkerInsert = (PFN_vkCmdDebugMarkerInsertEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerInsertEXT");
+	}
+
+	void nameObject(VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) const
+	{
+		if (!pfnDebugMarkerSetObjectName)
+			return;
+		VkDebugMarkerObjectNameInfoEXT info{ VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT };
+		info.objectType = type;
+		info.object = object;
+		info.pObjectName = name;
+		pfnDebugMarkerSetObjectName(dev, &info);
+	}
+
+	void markBeginRegion(VkCommandBuffer cmdBuffer, const char* name) const
+	{
+		if (!pfnCmdDebugMarkerBegin)
+			return;
+		VkDebugMarkerMarkerInfoEXT info{ VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT };
+		info.pMarkerName = name;
+		info.color[0] = 1.f;
+		pfnCmdDebugMarkerBegin(cmdBuffer, &info);
+	}
+
+	void markEndRegion(VkCommandBuffer cmdBuffer) const
+	{
+		if (!pfnCmdDebugMarkerEnd)
+			return;
+		pfnCmdDebugMarkerEnd(cmdBuffer);
+	}
+};
+
+
 struct ShaderModule
 {
     VkShaderModule m_shaderModule;
