@@ -135,8 +135,10 @@ TRESSFX_RETURN_CODE AMD_TRESSFX_DLL_API TressFX_LoadProcessedAsset(
     pTressFXMesh = new TressFXMesh();
     memcpy(desc.tressFXHair.pHair, pHairBlob->pHair, pHairBlob->size);
     desc.tressFXHair.size = pHairBlob->size;
-    pTressFXMesh->OnCreate(desc.pvkDevice, &desc.tressFXHair, sceneMesh, pTressFXTexture,
-                           desc.memoryProperties, uploadCmdBuffer, scratchBuffer,
+    pTressFXMesh->OnCreate(desc.pvkDevice, &desc.tressFXHair, sceneMesh,
+                           pTressFXTexture,
+                           desc.memoryProperties, uploadCmdBuffer,
+                           scratchBuffer,
                            scratchMemory,
                            desc.pOpaque->tressFXSimulation.m_GlobalConstraintsSetLayout,
                            desc.pOpaque->tressFXSimulation.m_LocalConstraintsSetLayout,
@@ -145,7 +147,8 @@ TRESSFX_RETURN_CODE AMD_TRESSFX_DLL_API TressFX_LoadProcessedAsset(
                            desc.pOpaque->tressFXSimulation.m_UpdateFollowHaitSetLayout,
                            desc.pOpaque->tressFXSimulation.m_ComputeTangentSetLayout,
                            desc.pOpaque->tressFXRenderer.m_pass1_hair_set_layout,
-                           desc.pOpaque->tressFXRenderer.m_shadow_pass_hair_set_layout);
+                           desc.pOpaque->tressFXRenderer.m_shadow_pass_hair_set_layout, 
+                           desc.pOpaque->markerCallbacks);
     desc.numTotalHairStrands = pTressFXMesh->m_HairAsset.m_NumTotalHairStrands;
     desc.numTotalHairVertices = pTressFXMesh->m_HairAsset.m_NumTotalHairVertices;
     desc.pTressFXMesh = (void *)pTressFXMesh;

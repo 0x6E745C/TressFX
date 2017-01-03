@@ -42,6 +42,7 @@ void TressFX_OpaqueDesc::Initialize(TressFX_Desc &desc, VkImageView depthTexture
             depthTexture, colorTexture, commandBuffer, scratchMemory, scratchBuffer,
             offsetInScratchBuffer, desc.depthStencilFormat, desc.colorFormat);
         initialized = true;
+        markerCallbacks.init(desc.pvkDevice);
     }
     refCount++;
 }
@@ -88,16 +89,20 @@ bool TressFX_OpaqueDesc::CreateProcessedAsset(
         delete pTressFXMesh;
     }
     pTressFXMesh = new TressFXMesh();
-    pTressFXMesh->OnCreate(desc.pvkDevice, &desc.tressFXHair, sceneMesh, hairTexture,
-                           memProperties, uploadCmdBuffer, scratchBuffer,
-                           scratchMemory, tressFXSimulation.m_GlobalConstraintsSetLayout,
+    pTressFXMesh->OnCreate(desc.pvkDevice, &desc.tressFXHair, sceneMesh,
+                           hairTexture,
+                           memProperties, uploadCmdBuffer,
+                           scratchBuffer,
+                           scratchMemory,
+                           tressFXSimulation.m_GlobalConstraintsSetLayout,
                            tressFXSimulation.m_LocalConstraintsSetLayout,
                            tressFXSimulation.m_LenghtWindTangentSetLayout,
                            tressFXSimulation.m_PrepareFollowHairSetLayout,
                            tressFXSimulation.m_UpdateFollowHaitSetLayout,
                            desc.pOpaque->tressFXSimulation.m_ComputeTangentSetLayout,
                            tressFXRenderer.m_pass1_hair_set_layout,
-                           tressFXRenderer.m_shadow_pass_hair_set_layout);
+                           tressFXRenderer.m_shadow_pass_hair_set_layout,
+                           desc.pOpaque->markerCallbacks);
 
     desc.numTotalHairStrands = pTressFXMesh->m_HairAsset.m_NumTotalHairStrands;
     desc.numTotalHairVertices = pTressFXMesh->m_HairAsset.m_NumTotalHairVertices;

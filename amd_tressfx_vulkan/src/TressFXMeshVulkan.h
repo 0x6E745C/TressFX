@@ -29,6 +29,7 @@
 #pragma once
 #include "TressFXAsset.h"
 #include "Util.h"
+#include "UtilVulkan.h"
 
 namespace AMD
 {
@@ -38,11 +39,13 @@ class TressFXMesh
   private:
     VkDevice m_pvkDevice;
     // private member function
-    VkResult CreateBufferAndViews(VkDevice pvkDevice, TressFX_SceneMesh *sceneMesh,
+    VkResult CreateBufferAndViews(VkDevice pvkDevice,
+ TressFX_SceneMesh *sceneMesh,
                                   VkPhysicalDeviceMemoryProperties memProperties,
                                   VkCommandBuffer upload_cmd_buffer,
-                                  VkBuffer scratchBuffer, VkDeviceMemory scratchMemory,
-                                  size_t &offsetInUploadBuffer);
+                                  VkBuffer scratchBuffer,
+ VkDeviceMemory scratchMemory,
+                                  size_t &offsetInUploadBuffer, const DebugMarkerPointer& markerCallbacks);
 
     VkResult AllocateDescriptorsSets(VkDevice pvkDevice,
                                      VkDescriptorSetLayout GlobalConstraintsSetLayout,
@@ -148,18 +151,29 @@ class TressFXMesh
     TressFXMesh(void);
     ~TressFXMesh(void);
 
-    VkResult OnCreate(VkDevice pvkDevice, TressFX_HairBlob *pHairBlob,
-                      TressFX_SceneMesh *sceneMesh, VkImageView pTexture,
-                      VkPhysicalDeviceMemoryProperties memProperties, VkCommandBuffer upload_cmd_buffer,
-                      VkBuffer scratchBuffer, VkDeviceMemory scratchMemory,
+    VkResult OnCreate(VkDevice pvkDevice,
+ TressFX_HairBlob *pHairBlob,
+                      TressFX_SceneMesh *sceneMesh,
+ VkImageView pTexture,
+                      VkPhysicalDeviceMemoryProperties memProperties,
+ VkCommandBuffer upload_cmd_buffer,
+                      VkBuffer scratchBuffer,
+ VkDeviceMemory scratchMemory,
+
                       VkDescriptorSetLayout GlobalConstraintsSetLayout,
+
                       VkDescriptorSetLayout LocalConstraintsSetLayout,
+
                       VkDescriptorSetLayout LenghtWindCollisiontSetLayout,
+
                       VkDescriptorSetLayout PrepareFollowHairSetLayout,
+
                       VkDescriptorSetLayout UpdateFollowHaitSetLayout,
+
                       VkDescriptorSetLayout ComputeTangetSetLayout,
+
                       VkDescriptorSetLayout Pass1SetLayout,
-                      VkDescriptorSetLayout ShadowSetLayout);
+                      VkDescriptorSetLayout ShadowSetLayout, const DebugMarkerPointer& markerCallbacks);
     void OnDestroy();
 
     void DestroyAsset();

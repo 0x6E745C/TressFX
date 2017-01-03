@@ -63,6 +63,7 @@ struct TressFX_OpaqueDesc
 
     TressFXSimulation tressFXSimulation; // Hair simulation class
     TressFXRenderer tressFXRenderer;     // Hair rendering class
+    DebugMarkerPointer markerCallbacks;
   private:
     bool initialized;                      // only initialize this structure once
     TressFXAssetLoader tressFXAssetLoader; // Hair asset loading class

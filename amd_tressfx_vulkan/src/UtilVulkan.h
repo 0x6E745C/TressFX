@@ -19,16 +19,11 @@ namespace AMD
 {
 struct DebugMarkerPointer
 {
-	PFN_vkDebugMarkerSetObjectTagEXT pfnDebugMarkerSetObjectTag;
-	PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectName;
-	PFN_vkCmdDebugMarkerBeginEXT pfnCmdDebugMarkerBegin;
-	PFN_vkCmdDebugMarkerEndEXT pfnCmdDebugMarkerEnd;
-	PFN_vkCmdDebugMarkerInsertEXT pfnCmdDebugMarkerInsert;
+	DebugMarkerPointer() {}
 
-	VkDevice dev;
-
-	DebugMarkerPointer(VkDevice device) : dev(device)
+	void init(VkDevice device)
 	{
+		dev = device;
 		pfnDebugMarkerSetObjectTag = (PFN_vkDebugMarkerSetObjectTagEXT)vkGetDeviceProcAddr(device, "vkDebugMarkerSetObjectTagEXT");
 		pfnDebugMarkerSetObjectName = (PFN_vkDebugMarkerSetObjectNameEXT)vkGetDeviceProcAddr(device, "vkDebugMarkerSetObjectNameEXT");
 		pfnCmdDebugMarkerBegin = (PFN_vkCmdDebugMarkerBeginEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerBeginEXT");
@@ -36,15 +31,19 @@ struct DebugMarkerPointer
 		pfnCmdDebugMarkerInsert = (PFN_vkCmdDebugMarkerInsertEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerInsertEXT");
 	}
 
-	void nameObject(VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) const
+	void nameObject(VkBuffer object, const char* name) const
 	{
-		if (!pfnDebugMarkerSetObjectName)
-			return;
-		VkDebugMarkerObjectNameInfoEXT info{ VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT };
-		info.objectType = type;
-		info.object = object;
-		info.pObjectName = name;
-		pfnDebugMarkerSetObjectName(dev, &info);
+		nameObject_impl(VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_EXT, reinterpret_cast<uint64_t>(object), name);
+	}
+
+	void nameObject(VkBufferView object, const char* name) const
+	{
+		nameObject_impl(VK_DEBUG_REPORT_OBJECT_TYPE_BUFFER_VIEW_EXT, reinterpret_cast<uint64_t>(object), name);
+	}
+
+	void nameObject(VkDeviceMemory object, const char* name) const
+	{
+		nameObject_impl(VK_DEBUG_REPORT_OBJECT_TYPE_DEVICE_MEMORY_EXT, reinterpret_cast<uint64_t>(object), name);
 	}
 
 	void markBeginRegion(VkCommandBuffer cmdBuffer, const char* name) const
@@ -62,6 +61,26 @@ struct DebugMarkerPointer
 		if (!pfnCmdDebugMarkerEnd)
 			return;
 		pfnCmdDebugMarkerEnd(cmdBuffer);
+	}
+
+private:
+	PFN_vkDebugMarkerSetObjectTagEXT pfnDebugMarkerSetObjectTag;
+	PFN_vkDebugMarkerSetObjectNameEXT pfnDebugMarkerSetObjectName;
+	PFN_vkCmdDebugMarkerBeginEXT pfnCmdDebugMarkerBegin;
+	PFN_vkCmdDebugMarkerEndEXT pfnCmdDebugMarkerEnd;
+	PFN_vkCmdDebugMarkerInsertEXT pfnCmdDebugMarkerInsert;
+
+	VkDevice dev;
+
+	void nameObject_impl(VkDebugReportObjectTypeEXT type, uint64_t object, const char* name) const
+	{
+		if (!pfnDebugMarkerSetObjectName)
+			return;
+		VkDebugMarkerObjectNameInfoEXT info{ VK_STRUCTURE_TYPE_DEBUG_MARKER_OBJECT_NAME_INFO_EXT };
+		info.objectType = type;
+		info.object = object;
+		info.pObjectName = name;
+		pfnDebugMarkerSetObjectName(dev, &info);
 	}
 };
 
