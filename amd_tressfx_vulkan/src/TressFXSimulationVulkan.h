@@ -38,6 +38,9 @@
 typedef DirectX::XMFLOAT4 float4;
 typedef DirectX::XMFLOAT3 float3;
 
+struct ConstBufferCS_Per_Frame;
+struct ConstBufferCS_HeadTransform;
+
 namespace AMD
 {
 
@@ -113,7 +116,10 @@ class TressFXSimulation
                                                 VkPhysicalDeviceMemoryProperties memProps);
     VkResult CreateDescriptorSet(VkDevice pvkDevice);
 
-  public:
+	void fillConstantBuffer(ConstBufferCS_Per_Frame * pCSPerFrame, bool warp, bool bFullSimulate, float targetFrameRate, int numOfStrandsPerThreadGroup, float windMag, AMD::tressfx_vec3 & windDir, float fElapsedTime);
+	void fillHeadConstantBuffer(ConstBufferCS_HeadTransform * pCSHeadTransform, bool singleHeadTransform, DirectX::XMMATRIX * pModelTransformForHead);
+	void fillSimulationCommands(const VkCommandBuffer &commandBuffer, float &density, const uint32_t &uniformBufferIndex);
+public:
     void SetSimulationParams(const TressFX_SimulationParams &simParams)
     {
         m_simParams = simParams;

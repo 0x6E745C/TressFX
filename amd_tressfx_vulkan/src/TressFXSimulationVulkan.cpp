@@ -636,6 +636,10 @@ float getScaledStiffness(float s0, float s_min_scale, float h, float h0)
     return s;
 }
 
+void fillConstantBuffer(ConstBufferCS_Per_Frame * pCSPerFrame, bool warp, bool bFullSimulate, float targetFrameRate, int numOfStrandsPerThreadGroup, float windMag, AMD::tressfx_vec3 & windDir, float fElapsedTime);
+
+void fillHeadConstantBuffer(ConstBufferCS_HeadTransform * pCSHeadTransform, bool singleHeadTransform, DirectX::XMMATRIX * pModelTransformForHead);
+
 //--------------------------------------------------------------------------------------
 //
 // Simulate
@@ -678,119 +682,7 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
                 sizeof(ConstBufferCS_Per_Frame), 0,
                 reinterpret_cast<void **>(&pCSPerFrame));
 
-    {
-        pCSPerFrame->bWarp = warp;
-
-        if (bFullSimulate)
-        {
-            pCSPerFrame->NumLengthConstraintIterations =
-                m_simParams.numLengthConstraintIterations;
-        }
-        else
-        {
-            pCSPerFrame->NumLengthConstraintIterations = 1;
-        }
-
-        pCSPerFrame->bCollision = (m_simParams.bCollision == true) ? 1 : 0;
-
-        pCSPerFrame->GravityMagnitude = m_simParams.gravityMagnitude;
-
-        pCSPerFrame->timeStep = targetFrameRate;
-
-        pCSPerFrame->NumOfStrandsPerThreadGroup = numOfStrandsPerThreadGroup;
-        pCSPerFrame->NumFollowHairsPerGuideHair =
-            (m_bGuideFollowHairPrev
-                 ? m_pTressFXMesh->m_HairAsset.m_NumFollowHairsPerGuideHair
-                 : 0);
-        pCSPerFrame->TipSeparationFactor =
-            m_pTressFXMesh->m_HairAsset.m_TipSeparationFactor;
-
-        ComputeWindPyramid(pCSPerFrame->Wind, pCSPerFrame->Wind1, pCSPerFrame->Wind2,
-                           pCSPerFrame->Wind3, windMag, windDir);
-
-        int numSections = m_simParams.numHairSections;
-
-        // hair section 0
-        if (numSections > 0)
-        {
-            pCSPerFrame->Damping0 = m_simParams.perSectionShapeParams[0].damping;
-            pCSPerFrame->StiffnessForLocalShapeMatching0 =
-                m_simParams.perSectionShapeParams[0].stiffnessForLocalShapeMatching;
-            pCSPerFrame->StiffnessForGlobalShapeMatching0 =
-                m_simParams.perSectionShapeParams[0].stiffnessForGlobalShapeMatching;
-            pCSPerFrame->GlobalShapeMatchingEffectiveRange0 =
-                m_simParams.perSectionShapeParams[0].globalShapeMatchingEffectiveRange;
-        }
-
-        // hair section 1
-        if (numSections > 1)
-        {
-            pCSPerFrame->Damping1 = m_simParams.perSectionShapeParams[1].damping;
-            pCSPerFrame->StiffnessForLocalShapeMatching1 =
-                m_simParams.perSectionShapeParams[1].stiffnessForLocalShapeMatching;
-            pCSPerFrame->StiffnessForGlobalShapeMatching1 =
-                m_simParams.perSectionShapeParams[1].stiffnessForGlobalShapeMatching;
-            pCSPerFrame->GlobalShapeMatchingEffectiveRange1 =
-                m_simParams.perSectionShapeParams[1].globalShapeMatchingEffectiveRange;
-        }
-
-        // hair section 2
-        if (numSections > 2)
-        {
-            pCSPerFrame->Damping2 = m_simParams.perSectionShapeParams[2].damping;
-            pCSPerFrame->StiffnessForLocalShapeMatching2 =
-                m_simParams.perSectionShapeParams[2].stiffnessForLocalShapeMatching;
-            pCSPerFrame->StiffnessForGlobalShapeMatching2 =
-                m_simParams.perSectionShapeParams[2].stiffnessForGlobalShapeMatching;
-            pCSPerFrame->GlobalShapeMatchingEffectiveRange2 =
-                m_simParams.perSectionShapeParams[2].globalShapeMatchingEffectiveRange;
-        }
-
-        // hair section 3
-        if (numSections > 3)
-        {
-            pCSPerFrame->Damping3 = m_simParams.perSectionShapeParams[3].damping;
-            pCSPerFrame->StiffnessForLocalShapeMatching3 =
-                m_simParams.perSectionShapeParams[3].stiffnessForLocalShapeMatching;
-            pCSPerFrame->StiffnessForGlobalShapeMatching3 =
-                m_simParams.perSectionShapeParams[3].stiffnessForGlobalShapeMatching;
-            pCSPerFrame->GlobalShapeMatchingEffectiveRange3 =
-                m_simParams.perSectionShapeParams[3].globalShapeMatchingEffectiveRange;
-        }
-
-        if (!bFullSimulate)
-        {
-            float h = fElapsedTime;
-            float h0 = targetFrameRate;
-            float s_min_scale =
-                0.3f; // minimum stiffness = s_min_scale * current stiffness
-
-            pCSPerFrame->StiffnessForLocalShapeMatching0 = getScaledStiffness(
-                m_simParams.perSectionShapeParams[0].stiffnessForLocalShapeMatching,
-                s_min_scale, h, h0);
-            pCSPerFrame->StiffnessForLocalShapeMatching1 = getScaledStiffness(
-                m_simParams.perSectionShapeParams[1].stiffnessForLocalShapeMatching,
-                s_min_scale, h, h0);
-            pCSPerFrame->StiffnessForLocalShapeMatching2 = getScaledStiffness(
-                m_simParams.perSectionShapeParams[2].stiffnessForLocalShapeMatching,
-                s_min_scale, h, h0);
-            pCSPerFrame->StiffnessForLocalShapeMatching3 = getScaledStiffness(
-                m_simParams.perSectionShapeParams[3].stiffnessForLocalShapeMatching,
-                s_min_scale, h, h0);
-        }
-
-        if (bFullSimulate)
-        {
-            pCSPerFrame->NumLocalShapeMatchingIterations =
-                m_simParams.numLocalShapeMatchingIterations;
-        }
-        else
-        {
-            pCSPerFrame->NumLocalShapeMatchingIterations = 1;
-        }
-
-        pCSPerFrame->NumVerticesPerStrand = g_TressFXNumVerticesPerStrand;
-    }
+	fillConstantBuffer(pCSPerFrame, warp, bFullSimulate, targetFrameRate, numOfStrandsPerThreadGroup, windMag, windDir, fElapsedTime);
     vkUnmapMemory(pvkDevice, m_pCBCSPerFrameMemory);
 
     // ConstBufferCS_HeadTransform
@@ -798,214 +690,216 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
     AMD_CHECKED_VULKAN_CALL(vkMapMemory(pvkDevice, m_pCBHeadTransformsMemory, 0,
                              sizeof(ConstBufferCS_HeadTransform), 0,
                              reinterpret_cast<void **>(&pCSHeadTransform)));
-    {
-        pCSHeadTransform->bSingleHeadTransform = singleHeadTransform;
-        pCSHeadTransform->ModelRotateForHead =
-            XMQuaternionRotationMatrix(*pModelTransformForHead);
-        pCSHeadTransform->ModelTransformForHead = *pModelTransformForHead;
-    }
+	fillHeadConstantBuffer(pCSHeadTransform, singleHeadTransform, pModelTransformForHead);
     vkUnmapMemory(pvkDevice, m_pCBHeadTransformsMemory);
 
-    VkBufferMemoryBarrier bufferBarrier[] = {
-        getBufferBarrier(m_pCBCSPerFrame, VK_ACCESS_HOST_WRITE_BIT,
-                         VK_ACCESS_UNIFORM_READ_BIT),
-        getBufferBarrier(m_pCBHeadTransforms, VK_ACCESS_HOST_WRITE_BIT,
-                         VK_ACCESS_UNIFORM_READ_BIT),
-    };
+	fillSimulationCommands(commandBuffer, density, uniformBufferIndex);
 
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_HOST_BIT,
-                         VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
-                         AMD_ARRAY_SIZE(bufferBarrier), bufferBarrier, 0, nullptr);
+    return vr;
+}
 
-    //======= Run the compute shader =======
+void TressFXSimulation::fillSimulationCommands(const VkCommandBuffer &commandBuffer, float &density, const uint32_t &uniformBufferIndex)
+{
+	VkBufferMemoryBarrier bufferBarrier[] = {
+		getBufferBarrier(m_pCBCSPerFrame, VK_ACCESS_HOST_WRITE_BIT,
+		VK_ACCESS_UNIFORM_READ_BIT),
+		getBufferBarrier(m_pCBHeadTransforms, VK_ACCESS_HOST_WRITE_BIT,
+		VK_ACCESS_UNIFORM_READ_BIT),
+	};
 
-    // Increase density a little bit (0.05) to hide popping. This allows simulation to
-    // take more hair than rendering and gives a chance
-    // to simulate hairs before they get rendered so that there will be enough time for
-    // popping to disappear.
-    density += 0.05f;
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_HOST_BIT,
+		VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0, 0, nullptr,
+		AMD_ARRAY_SIZE(bufferBarrier), bufferBarrier, 0, nullptr);
 
-    if (density > 1.0f)
-    {
-        density = 1.0f;
-    }
+	//======= Run the compute shader =======
 
-    int numOfGroupsForCS_VertexLevel =
-        (int)(((float)(m_bGuideFollowHairPrev
-                           ? m_pTressFXMesh->m_HairAsset.m_NumGuideHairVertices
-                           : m_pTressFXMesh->m_HairAsset.m_NumTotalHairVertices) /
-               (float)THREAD_GROUP_SIZE) *
-              density);
+	// Increase density a little bit (0.05) to hide popping. This allows simulation to
+	// take more hair than rendering and gives a chance
+	// to simulate hairs before they get rendered so that there will be enough time for
+	// popping to disappear.
+	density += 0.05f;
 
-    uint32_t descriptorOffset[] = {uniformBufferIndex * sizeof(ConstBufferCS_Per_Frame)};
+	if (density > 1.0f)
+	{
+		density = 1.0f;
+	}
 
-    // Prepare follow hair vertices before they are turning into guide ones.
-    // One thread computes one vertex
-    if (m_bGuideFollowHairPrev && !m_simParams.bGuideFollowSimulation)
-    {
-        VkDescriptorSet prepareFollowHairSets[] = {
-            m_configSet, m_pTressFXMesh->m_PrepareFollowHairSet};
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                m_CSPrepareFollowHairBeforeTurningIntoGuideLayout, 0,
-                                AMD_ARRAY_SIZE(prepareFollowHairSets),
-                                prepareFollowHairSets, AMD_ARRAY_SIZE(descriptorOffset),
-                                descriptorOffset);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          m_CSPrepareFollowHairBeforeTurningIntoGuide);
-        vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
+	int numOfGroupsForCS_VertexLevel =
+		(int)(((float)(m_bGuideFollowHairPrev
+			? m_pTressFXMesh->m_HairAsset.m_NumGuideHairVertices
+			: m_pTressFXMesh->m_HairAsset.m_NumTotalHairVertices) /
+			(float)THREAD_GROUP_SIZE) *
+			density);
 
-        VkBufferMemoryBarrier flushPrevPositionBarrier[] = {getBufferBarrier(
-            m_pTressFXMesh->m_HairVertexPositionsPrevBuffer, VK_ACCESS_MEMORY_WRITE_BIT,
-            VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT)};
+	uint32_t descriptorOffset[] = { uniformBufferIndex * sizeof(ConstBufferCS_Per_Frame) };
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                             AMD_ARRAY_SIZE(flushPrevPositionBarrier),
-                             flushPrevPositionBarrier, 0, nullptr);
-    }
+	// Prepare follow hair vertices before they are turning into guide ones.
+	// One thread computes one vertex
+	if (m_bGuideFollowHairPrev && !m_simParams.bGuideFollowSimulation)
+	{
+		VkDescriptorSet prepareFollowHairSets[] = {
+			m_configSet, m_pTressFXMesh->m_PrepareFollowHairSet };
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSPrepareFollowHairBeforeTurningIntoGuideLayout, 0,
+			AMD_ARRAY_SIZE(prepareFollowHairSets),
+			prepareFollowHairSets, AMD_ARRAY_SIZE(descriptorOffset),
+			descriptorOffset);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSPrepareFollowHairBeforeTurningIntoGuide);
+		vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
 
-    // Integrate and global shape constraints
-    // One thread computes one vertex
-    VkDescriptorSet globalConstraintSets[] = {m_configSet,
-                                              m_pTressFXMesh->m_GlobalConstraintsSet};
+		VkBufferMemoryBarrier flushPrevPositionBarrier[] = { getBufferBarrier(
+			m_pTressFXMesh->m_HairVertexPositionsPrevBuffer, VK_ACCESS_MEMORY_WRITE_BIT,
+			VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_MEMORY_READ_BIT) };
 
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                            m_CSIntegrationAndGlobalShapeConstraintsLayout, 0,
-                            AMD_ARRAY_SIZE(globalConstraintSets), globalConstraintSets,
-                            AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                      m_CSIntegrationAndGlobalShapeConstraints);
-    vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+			AMD_ARRAY_SIZE(flushPrevPositionBarrier),
+			flushPrevPositionBarrier, 0, nullptr);
+	}
 
-    VkBufferMemoryBarrier globalConstraintsBarriers[] = {
-        getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
-                         VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
-                         VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT),
-        getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsPrevBuffer,
-                         VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
-                         VK_ACCESS_SHADER_READ_BIT)};
+	// Integrate and global shape constraints
+	// One thread computes one vertex
+	VkDescriptorSet globalConstraintSets[] = { m_configSet,
+		m_pTressFXMesh->m_GlobalConstraintsSet };
 
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                         AMD_ARRAY_SIZE(globalConstraintsBarriers),
-                         globalConstraintsBarriers, 0, nullptr);
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+		m_CSIntegrationAndGlobalShapeConstraintsLayout, 0,
+		AMD_ARRAY_SIZE(globalConstraintSets), globalConstraintSets,
+		AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+		m_CSIntegrationAndGlobalShapeConstraints);
+	vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
 
-    // Local shape constraints. If the hair is very curly, increase the iteration so that
-    // hair style can be preserved well.
-    // One thread computes one strand
+	VkBufferMemoryBarrier globalConstraintsBarriers[] = {
+		getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
+		VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
+		VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT),
+		getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsPrevBuffer,
+		VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
+		VK_ACCESS_SHADER_READ_BIT) };
 
-    // If more than 16 vertices per strand, iterate on the CPU
-    if (g_TressFXNumVerticesPerStrand >= 16)
-    {
-        for (int iteration = 0; iteration < m_simParams.numLocalShapeMatchingIterations;
-             iteration++)
-        {
-            int numOfGroupsForCS_StrandLevel =
-                (int)(((float)(m_bGuideFollowHairPrev
-                                   ? m_pTressFXMesh->m_HairAsset.m_NumGuideHairStrands
-                                   : m_pTressFXMesh->m_HairAsset.m_NumTotalHairStrands) /
-                       (float)THREAD_GROUP_SIZE) *
-                      density);
-            VkDescriptorSet localConstraintSets[] = {
-                m_configSet, m_pTressFXMesh->m_LocalConstraintsSet};
-            vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                    m_CSLocalShapeConstraintsSingleDispatchLayout, 0,
-                                    AMD_ARRAY_SIZE(localConstraintSets),
-                                    localConstraintSets, AMD_ARRAY_SIZE(descriptorOffset),
-                                    descriptorOffset);
-            vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                              m_CSLocalShapeConstraints);
-            vkCmdDispatch(commandBuffer, numOfGroupsForCS_StrandLevel, 1, 1);
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+		AMD_ARRAY_SIZE(globalConstraintsBarriers),
+		globalConstraintsBarriers, 0, nullptr);
 
-            VkBufferMemoryBarrier localBarrier[] = {
-                getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
-                                 VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
-                                 VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT)};
+	// Local shape constraints. If the hair is very curly, increase the iteration so that
+	// hair style can be preserved well.
+	// One thread computes one strand
 
-            vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                                 VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                                 AMD_ARRAY_SIZE(localBarrier), localBarrier, 0, nullptr);
-        }
-    }
-    else
-    {
-        int numOfGroupsForCS_StrandLevel =
-            (int)(((float)(m_bGuideFollowHairPrev
-                               ? m_pTressFXMesh->m_HairAsset.m_NumGuideHairStrands
-                               : m_pTressFXMesh->m_HairAsset.m_NumTotalHairStrands) /
-                   (float)THREAD_GROUP_SIZE) *
-                  density);
-        VkDescriptorSet localConstraintSets[] = {m_configSet,
-                                                 m_pTressFXMesh->m_LocalConstraintsSet};
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                m_CSLocalShapeConstraintsSingleDispatchLayout, 0,
-                                AMD_ARRAY_SIZE(localConstraintSets), localConstraintSets,
-                                AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          m_CSLocalShapeConstraintsSingleDispatch);
-        vkCmdDispatch(commandBuffer, numOfGroupsForCS_StrandLevel, 1, 1);
+	// If more than 16 vertices per strand, iterate on the CPU
+	if (g_TressFXNumVerticesPerStrand >= 16)
+	{
+		for (int iteration = 0; iteration < m_simParams.numLocalShapeMatchingIterations;
+			iteration++)
+		{
+			int numOfGroupsForCS_StrandLevel =
+				(int)(((float)(m_bGuideFollowHairPrev
+					? m_pTressFXMesh->m_HairAsset.m_NumGuideHairStrands
+					: m_pTressFXMesh->m_HairAsset.m_NumTotalHairStrands) /
+					(float)THREAD_GROUP_SIZE) *
+					density);
+			VkDescriptorSet localConstraintSets[] = {
+				m_configSet, m_pTressFXMesh->m_LocalConstraintsSet };
+			vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+				m_CSLocalShapeConstraintsSingleDispatchLayout, 0,
+				AMD_ARRAY_SIZE(localConstraintSets),
+				localConstraintSets, AMD_ARRAY_SIZE(descriptorOffset),
+				descriptorOffset);
+			vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+				m_CSLocalShapeConstraints);
+			vkCmdDispatch(commandBuffer, numOfGroupsForCS_StrandLevel, 1, 1);
 
-        VkBufferMemoryBarrier localBarrier[] = {
-            getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
-                             VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
-                             VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT)};
+			VkBufferMemoryBarrier localBarrier[] = {
+				getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
+				VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
+				VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT) };
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                             AMD_ARRAY_SIZE(localBarrier), localBarrier, 0, nullptr);
-    }
+			vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+				VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+				AMD_ARRAY_SIZE(localBarrier), localBarrier, 0, nullptr);
+		}
+	}
+	else
+	{
+		int numOfGroupsForCS_StrandLevel =
+			(int)(((float)(m_bGuideFollowHairPrev
+				? m_pTressFXMesh->m_HairAsset.m_NumGuideHairStrands
+				: m_pTressFXMesh->m_HairAsset.m_NumTotalHairStrands) /
+				(float)THREAD_GROUP_SIZE) *
+				density);
+		VkDescriptorSet localConstraintSets[] = { m_configSet,
+			m_pTressFXMesh->m_LocalConstraintsSet };
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSLocalShapeConstraintsSingleDispatchLayout, 0,
+			AMD_ARRAY_SIZE(localConstraintSets), localConstraintSets,
+			AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSLocalShapeConstraintsSingleDispatch);
+		vkCmdDispatch(commandBuffer, numOfGroupsForCS_StrandLevel, 1, 1);
 
-    // Edge length constraints, wind and collisions
-    // One thread computes one vertex
-    VkDescriptorSet lengthWindCollisionSets[] = {
-        m_configSet, m_pTressFXMesh->m_LenghtWindCollisionSet};
-    vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                            m_CSLengthConstriantsWindAndCollisionLayout, 0,
-                            AMD_ARRAY_SIZE(lengthWindCollisionSets),
-                            lengthWindCollisionSets, AMD_ARRAY_SIZE(descriptorOffset),
-                            descriptorOffset);
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                      m_CSLengthConstriantsWindAndCollision);
-    vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
+		VkBufferMemoryBarrier localBarrier[] = {
+			getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
+			VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
+			VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT) };
 
-    VkBufferMemoryBarrier lengthWindCollisionBarriers[] = {
-        getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
-                         VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
-                         VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT)};
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+			AMD_ARRAY_SIZE(localBarrier), localBarrier, 0, nullptr);
+	}
 
-    vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                         VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                         AMD_ARRAY_SIZE(lengthWindCollisionBarriers),
-                         lengthWindCollisionBarriers, 0, nullptr);
+	// Edge length constraints, wind and collisions
+	// One thread computes one vertex
+	VkDescriptorSet lengthWindCollisionSets[] = {
+		m_configSet, m_pTressFXMesh->m_LenghtWindCollisionSet };
+	vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+		m_CSLengthConstriantsWindAndCollisionLayout, 0,
+		AMD_ARRAY_SIZE(lengthWindCollisionSets),
+		lengthWindCollisionSets, AMD_ARRAY_SIZE(descriptorOffset),
+		descriptorOffset);
+	vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+		m_CSLengthConstriantsWindAndCollision);
+	vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
 
-    // Update follow hair vertices
-    // One thread computes one vertex
-    if (m_bGuideFollowHairPrev)
-    {
-        VkDescriptorSet updateFollowHairSets[] = {m_configSet,
-                                                  m_pTressFXMesh->m_UpdateFollowHairSet};
-        vkCmdBindDescriptorSets(
-            commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-            m_CSUpdateFollowHairVerticesLayout, 0, AMD_ARRAY_SIZE(updateFollowHairSets),
-            updateFollowHairSets, AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          m_CSUpdateFollowHairVertices);
-        vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
+	VkBufferMemoryBarrier lengthWindCollisionBarriers[] = {
+		getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
+		VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
+		VK_ACCESS_MEMORY_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT) };
 
-        VkBufferMemoryBarrier updateFollowHairBarriers[] = {
-            getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
-                             VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
-                             VK_ACCESS_SHADER_READ_BIT),
-            getBufferBarrier(
-                             m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
-                             VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT)
-        };
+	vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+		VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+		AMD_ARRAY_SIZE(lengthWindCollisionBarriers),
+		lengthWindCollisionBarriers, 0, nullptr);
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                             AMD_ARRAY_SIZE(updateFollowHairBarriers),
-                             updateFollowHairBarriers, 0, nullptr);
-    }
+	// Update follow hair vertices
+	// One thread computes one vertex
+	if (m_bGuideFollowHairPrev)
+	{
+		VkDescriptorSet updateFollowHairSets[] = { m_configSet,
+			m_pTressFXMesh->m_UpdateFollowHairSet };
+		vkCmdBindDescriptorSets(
+			commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSUpdateFollowHairVerticesLayout, 0, AMD_ARRAY_SIZE(updateFollowHairSets),
+			updateFollowHairSets, AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSUpdateFollowHairVertices);
+		vkCmdDispatch(commandBuffer, numOfGroupsForCS_VertexLevel, 1, 1);
+
+		VkBufferMemoryBarrier updateFollowHairBarriers[] = {
+			getBufferBarrier(m_pTressFXMesh->m_HairVertexPositionsBuffer,
+			VK_ACCESS_SHADER_WRITE_BIT | VK_ACCESS_SHADER_READ_BIT,
+			VK_ACCESS_SHADER_READ_BIT),
+			getBufferBarrier(
+				m_pTressFXMesh->m_HairVertexTangentsBuffer, VK_ACCESS_MEMORY_READ_BIT,
+				VK_ACCESS_SHADER_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT)
+		};
+
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+			AMD_ARRAY_SIZE(updateFollowHairBarriers),
+			updateFollowHairBarriers, 0, nullptr);
+	}
 	else
 	{
 		VkBufferMemoryBarrier makeTangentBarrier[] = { getBufferBarrier(
@@ -1018,34 +912,149 @@ VkResult TressFXSimulation::Simulate(VkDevice pvkDevice, VkCommandBuffer command
 			nullptr);
 	}
 
-    // Compute tangents for every vertex (guide + follow)
-    {
-        int numOfGroupsForCS_TotalVertexLevel =
-            (int)(((float)(m_pTressFXMesh->m_HairAsset.m_NumTotalHairVertices) /
-                   (float)THREAD_GROUP_SIZE) *
-                  density);
-        vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                          m_CSComputeTangents);
-        VkDescriptorSet computeTangentSet[] = {m_configSet,
-                                               m_pTressFXMesh->m_ComputeTangentSet};
-        vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                                m_CSComputeTangentsLayout, 0,
-                                AMD_ARRAY_SIZE(computeTangentSet), computeTangentSet,
-                                AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
-        vkCmdDispatch(commandBuffer, numOfGroupsForCS_TotalVertexLevel, 1, 1);
+	// Compute tangents for every vertex (guide + follow)
+	{
+		int numOfGroupsForCS_TotalVertexLevel =
+			(int)(((float)(m_pTressFXMesh->m_HairAsset.m_NumTotalHairVertices) /
+			(float)THREAD_GROUP_SIZE) *
+				density);
+		vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSComputeTangents);
+		VkDescriptorSet computeTangentSet[] = { m_configSet,
+			m_pTressFXMesh->m_ComputeTangentSet };
+		vkCmdBindDescriptorSets(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+			m_CSComputeTangentsLayout, 0,
+			AMD_ARRAY_SIZE(computeTangentSet), computeTangentSet,
+			AMD_ARRAY_SIZE(descriptorOffset), descriptorOffset);
+		vkCmdDispatch(commandBuffer, numOfGroupsForCS_TotalVertexLevel, 1, 1);
 
-        VkBufferMemoryBarrier computeTangentBarrier[] = {
-            getBufferBarrier(m_pTressFXMesh->m_HairVertexTangentsBuffer,
-                             VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
-                             VK_ACCESS_SHADER_READ_BIT)};
+		VkBufferMemoryBarrier computeTangentBarrier[] = {
+			getBufferBarrier(m_pTressFXMesh->m_HairVertexTangentsBuffer,
+			VK_ACCESS_MEMORY_READ_BIT | VK_ACCESS_MEMORY_WRITE_BIT,
+			VK_ACCESS_SHADER_READ_BIT) };
 
-        vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
-                             VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
-                             AMD_ARRAY_SIZE(computeTangentBarrier), computeTangentBarrier,
-                             0, nullptr);
-    }
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT,
+			VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT, 0, 0, nullptr,
+			AMD_ARRAY_SIZE(computeTangentBarrier), computeTangentBarrier,
+			0, nullptr);
+	}
+}
 
-    return vr;
+void TressFXSimulation::fillHeadConstantBuffer(ConstBufferCS_HeadTransform * pCSHeadTransform, bool singleHeadTransform, DirectX::XMMATRIX * pModelTransformForHead)
+{
+	{
+		pCSHeadTransform->bSingleHeadTransform = singleHeadTransform;
+		pCSHeadTransform->ModelRotateForHead =
+			XMQuaternionRotationMatrix(*pModelTransformForHead);
+		pCSHeadTransform->ModelTransformForHead = *pModelTransformForHead;
+	}
+}
+
+void TressFXSimulation::fillConstantBuffer(ConstBufferCS_Per_Frame * pCSPerFrame, bool warp, bool bFullSimulate, float targetFrameRate, int numOfStrandsPerThreadGroup, float windMag, AMD::tressfx_vec3 & windDir, float fElapsedTime)
+{
+		pCSPerFrame->bWarp = warp;
+
+		if (bFullSimulate)
+		{
+			pCSPerFrame->NumLengthConstraintIterations =
+				m_simParams.numLengthConstraintIterations;
+		}
+		else
+		{
+			pCSPerFrame->NumLengthConstraintIterations = 1;
+		}
+
+		pCSPerFrame->bCollision = (m_simParams.bCollision == true) ? 1 : 0;
+
+		pCSPerFrame->GravityMagnitude = m_simParams.gravityMagnitude;
+
+		pCSPerFrame->timeStep = targetFrameRate;
+
+		pCSPerFrame->NumOfStrandsPerThreadGroup = numOfStrandsPerThreadGroup;
+		pCSPerFrame->NumFollowHairsPerGuideHair =
+			(m_bGuideFollowHairPrev
+				? m_pTressFXMesh->m_HairAsset.m_NumFollowHairsPerGuideHair
+				: 0);
+		pCSPerFrame->TipSeparationFactor =
+			m_pTressFXMesh->m_HairAsset.m_TipSeparationFactor;
+
+		ComputeWindPyramid(pCSPerFrame->Wind, pCSPerFrame->Wind1, pCSPerFrame->Wind2,
+			pCSPerFrame->Wind3, windMag, windDir);
+
+		int numSections = m_simParams.numHairSections;
+
+		switch (numSections)
+		{
+		// hair section 3
+		case 3:
+			pCSPerFrame->Damping3 = m_simParams.perSectionShapeParams[3].damping;
+			pCSPerFrame->StiffnessForLocalShapeMatching3 =
+				m_simParams.perSectionShapeParams[3].stiffnessForLocalShapeMatching;
+			pCSPerFrame->StiffnessForGlobalShapeMatching3 =
+				m_simParams.perSectionShapeParams[3].stiffnessForGlobalShapeMatching;
+			pCSPerFrame->GlobalShapeMatchingEffectiveRange3 =
+				m_simParams.perSectionShapeParams[3].globalShapeMatchingEffectiveRange;
+		// hair section 2
+		case 2:
+			pCSPerFrame->Damping2 = m_simParams.perSectionShapeParams[2].damping;
+			pCSPerFrame->StiffnessForLocalShapeMatching2 =
+				m_simParams.perSectionShapeParams[2].stiffnessForLocalShapeMatching;
+			pCSPerFrame->StiffnessForGlobalShapeMatching2 =
+				m_simParams.perSectionShapeParams[2].stiffnessForGlobalShapeMatching;
+			pCSPerFrame->GlobalShapeMatchingEffectiveRange2 =
+				m_simParams.perSectionShapeParams[2].globalShapeMatchingEffectiveRange;
+		// hair section 1
+		case 1:
+			pCSPerFrame->Damping1 = m_simParams.perSectionShapeParams[1].damping;
+			pCSPerFrame->StiffnessForLocalShapeMatching1 =
+				m_simParams.perSectionShapeParams[1].stiffnessForLocalShapeMatching;
+			pCSPerFrame->StiffnessForGlobalShapeMatching1 =
+				m_simParams.perSectionShapeParams[1].stiffnessForGlobalShapeMatching;
+			pCSPerFrame->GlobalShapeMatchingEffectiveRange1 =
+				m_simParams.perSectionShapeParams[1].globalShapeMatchingEffectiveRange;
+		// hair section 0
+		case 0:
+			pCSPerFrame->Damping0 = m_simParams.perSectionShapeParams[0].damping;
+			pCSPerFrame->StiffnessForLocalShapeMatching0 =
+				m_simParams.perSectionShapeParams[0].stiffnessForLocalShapeMatching;
+			pCSPerFrame->StiffnessForGlobalShapeMatching0 =
+				m_simParams.perSectionShapeParams[0].stiffnessForGlobalShapeMatching;
+			pCSPerFrame->GlobalShapeMatchingEffectiveRange0 =
+				m_simParams.perSectionShapeParams[0].globalShapeMatchingEffectiveRange;
+		}
+
+		if (!bFullSimulate)
+		{
+			float h = fElapsedTime;
+			float h0 = targetFrameRate;
+			float s_min_scale =
+				0.3f; // minimum stiffness = s_min_scale * current stiffness
+
+			pCSPerFrame->StiffnessForLocalShapeMatching0 = getScaledStiffness(
+				m_simParams.perSectionShapeParams[0].stiffnessForLocalShapeMatching,
+				s_min_scale, h, h0);
+			pCSPerFrame->StiffnessForLocalShapeMatching1 = getScaledStiffness(
+				m_simParams.perSectionShapeParams[1].stiffnessForLocalShapeMatching,
+				s_min_scale, h, h0);
+			pCSPerFrame->StiffnessForLocalShapeMatching2 = getScaledStiffness(
+				m_simParams.perSectionShapeParams[2].stiffnessForLocalShapeMatching,
+				s_min_scale, h, h0);
+			pCSPerFrame->StiffnessForLocalShapeMatching3 = getScaledStiffness(
+				m_simParams.perSectionShapeParams[3].stiffnessForLocalShapeMatching,
+				s_min_scale, h, h0);
+		}
+
+		if (bFullSimulate)
+		{
+			pCSPerFrame->NumLocalShapeMatchingIterations =
+				m_simParams.numLocalShapeMatchingIterations;
+		}
+		else
+		{
+			pCSPerFrame->NumLocalShapeMatchingIterations = 1;
+		}
+
+		pCSPerFrame->NumVerticesPerStrand = g_TressFXNumVerticesPerStrand;
 }
 
 //--------------------------------------------------------------------------------------
