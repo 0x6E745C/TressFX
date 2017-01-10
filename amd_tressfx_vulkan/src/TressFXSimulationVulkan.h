@@ -43,20 +43,19 @@ struct ConstBufferCS_HeadTransform;
 
 namespace AMD
 {
-
 class TressFXSimulation
 {
-  public:
+public:
     TressFXSimulation(void);
     ~TressFXSimulation(void);
 
     VkResult OnCreateDevice(VkDevice pvkDevice, TressFX_CollisionCapsule *pCollision,
-                            uint32_t maxUniformCount, VkPhysicalDeviceMemoryProperties memProperties);
+        uint32_t maxUniformCount, VkPhysicalDeviceMemoryProperties memProperties);
     VkResult Simulate(VkDevice pvkContext, VkCommandBuffer commandBuffer,
-                      float fElapsedTime, float density, tressfx_vec3 &windDir,
-                      float windMag, DirectX::XMMATRIX *pModelTransformForHead,
-                      float targetFrameRate, bool singleHeadTransform, bool warp,
-                      uint32_t uniformBufferIndex);
+        float fElapsedTime, float density, tressfx_vec3 &windDir,
+        float windMag, DirectX::XMMATRIX *pModelTransformForHead,
+        float targetFrameRate, bool singleHeadTransform, bool warp,
+        uint32_t uniformBufferIndex);
     void OnDestroy(VkDevice pvkDevice);
     TressFXMesh *m_pTressFXMesh;
     float m_elapsedTimeSinceLastSim;
@@ -69,7 +68,7 @@ class TressFXSimulation
     VkDescriptorSetLayout m_UpdateFollowHaitSetLayout;
     VkDescriptorSetLayout m_ComputeTangentSetLayout;
 
-  private:
+private:
     bool m_bGuideFollowHairPrev;
 
     // hair simulation params
@@ -111,19 +110,18 @@ class TressFXSimulation
     VkDeviceMemory m_pCBHeadTransformsMemory;
 
     VkResult CreateComputeShaderConstantBuffers(VkDevice pvkDevice,
-                                                TressFX_CollisionCapsule *pCollision,
-                                                uint32_t maxUniformBufferCount,
-                                                VkPhysicalDeviceMemoryProperties memProps);
+        TressFX_CollisionCapsule *pCollision,
+        uint32_t maxUniformBufferCount,
+        VkPhysicalDeviceMemoryProperties memProps);
     VkResult CreateDescriptorSet(VkDevice pvkDevice);
 
-	void fillConstantBuffer(ConstBufferCS_Per_Frame * pCSPerFrame, bool warp, bool bFullSimulate, float targetFrameRate, int numOfStrandsPerThreadGroup, float windMag, AMD::tressfx_vec3 & windDir, float fElapsedTime);
-	void fillHeadConstantBuffer(ConstBufferCS_HeadTransform * pCSHeadTransform, bool singleHeadTransform, DirectX::XMMATRIX * pModelTransformForHead);
-	void fillSimulationCommands(const VkCommandBuffer &commandBuffer, float &density, const uint32_t &uniformBufferIndex);
+    void fillConstantBuffer(ConstBufferCS_Per_Frame * pCSPerFrame, bool warp, bool bFullSimulate, float targetFrameRate, int numOfStrandsPerThreadGroup, float windMag, AMD::tressfx_vec3 & windDir, float fElapsedTime);
+    void fillHeadConstantBuffer(ConstBufferCS_HeadTransform * pCSHeadTransform, bool singleHeadTransform, DirectX::XMMATRIX * pModelTransformForHead);
+    void fillSimulationCommands(const VkCommandBuffer &commandBuffer, float &density, const uint32_t &uniformBufferIndex);
 public:
     void SetSimulationParams(const TressFX_SimulationParams &simParams)
     {
         m_simParams = simParams;
     }
 };
-
 } // namespace AMD
